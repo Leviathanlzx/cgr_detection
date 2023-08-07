@@ -216,13 +216,20 @@ def rscale_box_with_padding(original_size,boxes, target_size,border):
     return boxes
 
 
-def cgr_detect_with_onnx(image):
-    img ,border= prepare_input(image)
-    start_time = time.time()
+def cgr_detect_with_onnx(frame):
+    [height, width, _] = frame.shape
+    length = max((height, width))
+    image = np.zeros((length, length, 3), np.uint8)
+    image[0:height, 0:width] = frame
+    scale = length / 640
+    image = cv2.resize(image, (640, 640))
+    image = image.astype(np.float32) / 255.0
+    input_img = np.transpose(image, [2, 0, 1])
+    input_img = input_img[np.newaxis, :, :, :]
     # Create tensor from external memory
-    outputs = cgr_model.run([label_name], {input_name: img})
+    outputs = cgr_model.run([label_name], {input_name: input_img})
     output_buffer=np.transpose(outputs[0],[0,2,1])
-    boxes, scores, class_ids = process_output(output_buffer, 0.4, 0.7, image, img,border)
+    boxes, scores= postprocess(outputs[0].squeeze(),0.4,(640*scale,640*scale))
     # boxes, result = bytetrack(boxes, scores,class_ids, tracker_cgr)
     if isinstance(boxes, numpy.ndarray) and boxes.shape[0]!=0:
         # boxes = xywh2xyxy_rescale(boxes, 0, False)

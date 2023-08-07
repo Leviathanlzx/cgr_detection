@@ -98,7 +98,7 @@ label_name = sess.get_outputs()[0].name
 result=sess.run([label_name],{input_name:image})
 # outputs = np.transpose(result[0].squeeze(),[1,2,0])*255
 # print(outputs.shape)
-boxs,score=postprocess(result[0].squeeze(),0.5,images.shape)
+boxs,score=postprocess(result[0].squeeze(),0.5,(640,640))
 print(boxs)
 
 # cv2.imwrite("video/result.jpg",outputs)
