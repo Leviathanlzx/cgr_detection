@@ -2,7 +2,7 @@ from datetime import datetime
 import cv2
 import numpy as np
 import torch
-from onnx_inference import cgr_detect_with_onnx
+from ort_inference import cgr_detect_with_onnx
 
 
 class Colors:

@@ -58,7 +58,6 @@ def process_output(output,conf_threshold,iou_threshold,img,inputimg,border):
 
     # Get bounding boxes for each object
     boxes =extract_boxes(predictions,img,inputimg,border)
-
     # Apply non-maxima suppression to suppress weak, overlapping bounding boxes
     indices = nms(boxes, scores, iou_threshold)
     # indices = nms(torch.tensor(boxes), torch.tensor(scores), iou_threshold)
@@ -69,15 +68,78 @@ def process_output(output,conf_threshold,iou_threshold,img,inputimg,border):
 def extract_boxes(predictions,ori,inputimg,border):
     # Extract boxes from predictions
     boxes = predictions[:, :4]
+    boxes = bbox_cxcywh_to_xyxy(boxes)
     # Scale boxes to original image dimensions
     boxes = rscale_box_with_padding((border[4],border[5]),boxes,(ori.shape[1],ori.shape[0]),border)
     # boxes = resize_box_with_padding(boxes,ori,inputimg)
     # Convert boxes to xyxy format
-    boxes = xywh2xyxy(boxes)
-
     return boxes
 
 
+def preprocess(image_path, ort_model):
+    # 加载图片
+    image = image_path
+
+    # 获取图像宽高
+    image_h, image_w = image.shape[:2]
+
+    # 获取所有输入节点信息
+    input_nodes = ort_model.get_inputs()
+
+    # 筛选出名称为"images"的输入节点信息
+    input_node = next(filter(lambda n: n.name == "images", input_nodes), None)
+
+    if input_node is None:
+        raise ValueError("No input node with name 'images'")
+
+    # 输入尺寸
+    input_shape = input_node.shape[-2:]
+    input_h, input_w = 640,640
+
+    # 缩放因子
+    ratio_h = input_h / image_h
+    ratio_w = input_w / image_w
+
+    # 预处理步骤
+    img = cv2.resize(image, (0, 0), fx=ratio_w, fy=ratio_h, interpolation=2)
+    img = img[:, :, ::-1] / 255.0
+    img = img.transpose(2, 0, 1)
+    img = np.expand_dims(img, 0)
+    img = np.ascontiguousarray(img, dtype=np.float32)
+
+    return image, img, (image_h, image_w)
+def bbox_cxcywh_to_xyxy(boxes):
+
+    cx, cy, w, h = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
+    x1 = cx - 0.5 * w
+    y1 = cy - 0.5 * h
+    x2 = cx + 0.5 * w
+    y2 = cy + 0.5 * h
+
+    return np.stack([x1, y1, x2, y2], axis=1)
+def postprocess(outs, conf_thres, im_shape):
+    boxes, scores = outs[:, :4], outs[:, 4:]
+
+        # 根据 scores 数值分布判断是否进行归一化处理
+    if not (np.all((scores > 0) & (scores < 1))):
+        print("normalized value >>>")
+        scores = 1 / (1 + np.exp(-scores))
+
+    boxes = bbox_cxcywh_to_xyxy(boxes)
+    _max = scores.max(-1)
+    _mask = _max > conf_thres
+    boxes, scores = boxes[_mask], scores[_mask]
+    labels, scores = scores.argmax(-1), scores.max(-1)
+
+    # 对边框信息进行尺度归一化
+    x1, y1, x2, y2 = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
+    x1 = np.floor(np.minimum(np.maximum(1, x1 * im_shape[1]), im_shape[1] - 1)).astype(int)
+    y1 = np.floor(np.minimum(np.maximum(1, y1 * im_shape[0]), im_shape[0] - 1)).astype(int)
+    x2 = np.ceil(np.minimum(np.maximum(1, x2 * im_shape[1]), im_shape[1] - 1)).astype(int)
+    y2 = np.ceil(np.minimum(np.maximum(1, y2 * im_shape[0]), im_shape[0] - 1)).astype(int)
+    boxes = np.stack([x1, y1, x2, y2], axis=1)
+
+    return boxes,scores
 def proportional_resize_with_padding(img,new_shape: Tuple[int, int])-> np.array:
     try:
         # 获取原始图片的宽高
@@ -149,7 +211,7 @@ def rscale_box_with_padding(original_size,boxes, target_size,border):
     scale_y = target_height / original_height
 
     # Adjust the box coordinates to account for padding
-    boxes-= np.array([border[2],border[0],0,0])
+    boxes-= np.array([border[2],border[0],border[2],border[0]])
     boxes *= np.array([scale_x,scale_y,scale_x,scale_y])
     return boxes
 
@@ -159,17 +221,14 @@ def cgr_detect_with_onnx(image):
     start_time = time.time()
     # Create tensor from external memory
     outputs = cgr_model.run([label_name], {input_name: img})
-    output_buffer=np.transpose(outputs,[0,2,1])
+    output_buffer=np.transpose(outputs[0],[0,2,1])
     boxes, scores, class_ids = process_output(output_buffer, 0.4, 0.7, image, img,border)
-    boxes=np.array(boxes)
-    scores=np.array(scores)
-    class_ids=np.array(class_ids)
     # boxes, result = bytetrack(boxes, scores,class_ids, tracker_cgr)
     if isinstance(boxes, numpy.ndarray) and boxes.shape[0]!=0:
         # boxes = xywh2xyxy_rescale(boxes, 0, False)
         return boxes,scores
     else:
-        return [],[],[]
+        return [],[]
 
 def pose_estimate_with_onnx(frame):
     [height, width, _] = frame.shape
