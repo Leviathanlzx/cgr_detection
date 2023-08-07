@@ -4,18 +4,18 @@ import numpy
 import numpy as np
 from typing import Tuple
 import openvino.runtime as ov
-
+import onnxruntime as rt
 from bytetrack_init import bytetrack,make_parser
 from yolov8onnx.utils import xywh2xyxy, nms
 from ultralytics.trackers import BYTETracker
 
 core1 = ov.Core()
-core2 = ov.Core()
-cgr_model = core1.compile_model("model/last.onnx", "AUTO")
-pose_model = core2.compile_model("model/yolov8n-pose.onnx","AUTO")
-output_node = pose_model.outputs[0]
-infer_cgr = cgr_model.create_infer_request()
-infer_pose = pose_model.create_infer_request()
+cgr_model=rt.InferenceSession("model/rtdetr-best.onnx")
+input_name = cgr_model.get_inputs()[0].name
+label_name = cgr_model.get_outputs()[0].name
+pose_model=rt.InferenceSession("model/yolov8n-pose.onnx")
+input_names = pose_model.get_inputs()[0].name
+label_names = pose_model.get_outputs()[0].name
 args = make_parser().parse_args()
 tracker = BYTETracker(args, frame_rate=30)
 tracker_cgr=BYTETracker(args, frame_rate=60)
@@ -160,13 +160,8 @@ def cgr_detect_with_onnx(image):
     img ,border= prepare_input(image)
     start_time = time.time()
     # Create tensor from external memory
-    input_tensor = ov.Tensor(array=img)
-    # Set input tensor for model with one input
-    infer_cgr.set_input_tensor(input_tensor)
-    infer_cgr.infer()
-    # Get output tensor for model with one output
-    output = infer_cgr.get_output_tensor()
-    output_buffer = output.data
+    outputs = cgr_model.run([label_name], {input_name: img})
+    output_buffer=np.transpose(outputs,[0,2,1])
     boxes, scores, class_ids = process_output(output_buffer, 0.4, 0.7, image, img,border)
     boxes=np.array(boxes)
     scores=np.array(scores)
@@ -184,11 +179,14 @@ def pose_estimate_with_onnx(frame):
     image = np.zeros((length, length, 3), np.uint8)
     image[0:height, 0:width] = frame
     scale = length / 640
-
-    blob = cv2.dnn.blobFromImage(image, scalefactor=1 / 255, size=(640, 640), swapRB=True)
+    image = cv2.resize(image, (640, 640))
+    image = image.astype(np.float32) / 255.0
+    input_img = np.transpose(image, [2, 0, 1])
+    input_img = input_img[np.newaxis, :, :, :]
+    # blob = cv2.dnn.blobFromImage(image, scalefactor=1 / 255, size=(640, 640), swapRB=True)
     # 基于OpenVINO实现推理计算
-    outputs = infer_pose.infer(blob)[output_node]
-    outputs = np.array([cv2.transpose(outputs[0])])
+    outputs = pose_model.run([label_names],{input_names:input_img})
+    outputs = np.transpose(outputs[0],[0,2,1])
 
     classes_scores = outputs[:, :, 4]
     key_points = outputs[:, :, 5:]
@@ -221,74 +219,3 @@ def pose_estimate_with_onnx(frame):
         box= xywh2xyxy_rescale(box,scale,False)
     kpts = np.array(preds_kpts)[result_boxes].reshape(-1,17,3)*scale
     return box,scores,result,kpts
-
-
-def cgr_detect_alternative(frame):
-    [height, width, _] = frame.shape
-    length = max((height, width))
-    image = np.zeros((length, length, 3), np.uint8)
-    image[0:height, 0:width] = frame
-    scale = length / 640
-
-    blob = cv2.dnn.blobFromImage(image, scalefactor=1 / 255, size=(640, 640), swapRB=True)
-    infer_cgr.infer(blob)
-    # Get output tensor for model with one output
-    output = infer_cgr.get_output_tensor()
-    outputs = output.data
-
-    classes_scores = outputs[:, :, 4]
-    # Create a mask to filter rows based on classes_scores >= 0.5
-    mask = classes_scores >= 0.5
-
-    # Use the mask to get the filtered_outputs array
-    filtered_outputs = outputs[mask]
-
-    # Calculate boxes using vectorized operations
-    boxes = filtered_outputs[:, 0:4] - np.column_stack(
-        [(0.5 * filtered_outputs[:, 2]), (0.5 * filtered_outputs[:, 3]), np.zeros_like(filtered_outputs[:, 2]),
-         np.zeros_like(filtered_outputs[:, 3])])
-
-    # Extract scores and key points
-    scores = filtered_outputs[:, 4]
-    # Optionally, convert the boxes list to a NumPy array
-    result_boxes = cv2.dnn.NMSBoxes(boxes, scores, 0.25, 0.5, 0.5)
-    box = np.array(boxes)[result_boxes].reshape(-1, 4)
-    box = xywh2xyxy_rescale(box, scale)
-    scores = np.array(scores)[result_boxes]
-    return box,scores
-# if __name__ == '__main__':
-#     # cap= cv2.VideoCapture(0)
-#     # cap.set(4, 1080)
-#     # cap.set(3, 720)
-#     # cv2.namedWindow("Detected Objects", cv2.WINDOW_NORMAL)
-#     # cv2.resizeWindow("Detected Objects", 1920,1080)
-#     # while cap.isOpened():
-#     #
-#     #     # Read frame from the video
-#     #     ret, frame = cap.read()
-#     #
-#     #     if not ret:
-#     #         break
-#     frame=cv2.imread("hands/10.jpg")
-#     # image = cv2.imread("hands/220.jpg")
-#     img,border=prepare_input(frame)
-#     start_time = time.time()
-#     # Create tensor from external memory
-#     input_tensor = ov.Tensor(array=img)
-#     # Set input tensor for model with one input
-#     infer_request.set_input_tensor(input_tensor)
-#     infer_request.infer()
-#     # infer_request.start_async()
-#     # infer_request.wait()
-#     # Get output tensor for model with one output
-#     output = infer_request.get_output_tensor()
-#     output_buffer = output.data
-#     boxes, scores, class_ids=process_output(output_buffer,0.4,0.8,frame,img,border)
-#     current_time = time.time()
-#     elapsed_time = current_time - start_time
-#     print(boxes)
-#     combined_img = draw_detections(frame, boxes, scores, class_ids, mask_alpha=0.4)
-#     cv2.imwrite("compare1.jpg",combined_img)
-#     # cv2.imshow("Detected Objects", combined_img)
-#     # if cv2.waitKey(1) & 0xFF == ord('q'):
-#     #     break

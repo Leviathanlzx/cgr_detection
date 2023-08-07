@@ -1,6 +1,6 @@
 import cv2
 import time
-from onnx_inference import pose_estimate_with_onnx
+from ort_inference import pose_estimate_with_onnx
 from func import detect_and_draw
 
 class Result:
@@ -16,7 +16,7 @@ def mp4save():
     frame_height = 1080  # Height of the frames in the output video
     fps = 30  # Frames per second
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Codec for MP4 format
-    out = cv2.VideoWriter("video/out2.mp4", fourcc, fps, (frame_width, frame_height))
+    out = cv2.VideoWriter("video/out3.mp4", fourcc, fps, (frame_width, frame_height))
     return out
 
 stream="rtmp://10.50.7.204:1935/live/stream"
