@@ -171,10 +171,10 @@ def cgr_detect_with_onnx(image):
     boxes=np.array(boxes)
     scores=np.array(scores)
     class_ids=np.array(class_ids)
-    boxes, result = bytetrack(boxes, scores,class_ids, tracker_cgr)
+    # boxes, result = bytetrack(boxes, scores,class_ids, tracker_cgr)
     if isinstance(boxes, numpy.ndarray) and boxes.shape[0]!=0:
-        boxes = xywh2xyxy_rescale(boxes, 0, False)
-        return boxes,scores,result
+        # boxes = xywh2xyxy_rescale(boxes, 0, False)
+        return boxes,scores
     else:
         return [],[],[]
 

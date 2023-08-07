@@ -3,13 +3,11 @@ import cv2
 import numpy
 import numpy as np
 from typing import Tuple
-import openvino.runtime as ov
 import onnxruntime as rt
 from bytetrack_init import bytetrack,make_parser
 from yolov8onnx.utils import xywh2xyxy, nms
 from ultralytics.trackers import BYTETracker
 
-core1 = ov.Core()
 cgr_model=rt.InferenceSession("model/rtdetr-best.onnx")
 input_name = cgr_model.get_inputs()[0].name
 label_name = cgr_model.get_outputs()[0].name
@@ -166,10 +164,10 @@ def cgr_detect_with_onnx(image):
     boxes=np.array(boxes)
     scores=np.array(scores)
     class_ids=np.array(class_ids)
-    boxes, result = bytetrack(boxes, scores,class_ids, tracker_cgr)
+    # boxes, result = bytetrack(boxes, scores,class_ids, tracker_cgr)
     if isinstance(boxes, numpy.ndarray) and boxes.shape[0]!=0:
-        boxes = xywh2xyxy_rescale(boxes, 0, False)
-        return boxes,scores,result
+        # boxes = xywh2xyxy_rescale(boxes, 0, False)
+        return boxes,scores
     else:
         return [],[],[]
 

@@ -192,7 +192,7 @@ def cgr_detect(k, img,direction):
     #     cv2.imwrite(f"hands/{count[0]}.jpg",person)
 
     if person.shape[0] != 0 and person.shape[1] != 0:
-        boxes, scores, class_ids=cgr_detect_with_onnx(person)
+        boxes, scores=cgr_detect_with_onnx(person)
         # boxes, scores = cgr_detect_alternative(person)
         for i, c in enumerate(scores):
             if c > 0.4:
