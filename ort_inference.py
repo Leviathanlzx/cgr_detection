@@ -7,6 +7,7 @@ import onnxruntime as rt
 from bytetrack_init import bytetrack,make_parser
 from yolov8onnx.utils import xywh2xyxy, nms
 from ultralytics.trackers import BYTETracker
+from test import SR
 
 cgr_model=rt.InferenceSession("model/rtdetr-best.onnx")
 input_name = cgr_model.get_inputs()[0].name
@@ -217,6 +218,7 @@ def rscale_box_with_padding(original_size,boxes, target_size,border):
 
 
 def cgr_detect_with_onnx(frame):
+    frame = SR(frame)
     [height, width, _] = frame.shape
     length = max((height, width))
     image = np.zeros((length, length, 3), np.uint8)
@@ -229,7 +231,7 @@ def cgr_detect_with_onnx(frame):
     # Create tensor from external memory
     outputs = cgr_model.run([label_name], {input_name: input_img})
     output_buffer=np.transpose(outputs[0],[0,2,1])
-    boxes, scores= postprocess(outputs[0].squeeze(),0.4,(640*scale,640*scale))
+    boxes, scores= postprocess(outputs[0].squeeze(),0.35,(length/3,length/3))
     # boxes, result = bytetrack(boxes, scores,class_ids, tracker_cgr)
     if isinstance(boxes, numpy.ndarray) and boxes.shape[0]!=0:
         # boxes = xywh2xyxy_rescale(boxes, 0, False)

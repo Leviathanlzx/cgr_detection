@@ -12,9 +12,10 @@ cv2.resizeWindow("Multi Person Pose Detection", 1920,1080)
 
 if __name__ == '__main__':
     img=cv2.imread("video/result.jpg")
-    results = model.predict(img,device="cpu")[0].plot()
+    results = model.predict(img,device="cpu",conf=0.1)[0]
+    print(results.boxes.conf)
     # cgr_detect(results,img)
-    cv2.imshow("Multi Person Pose Detection",results)
+    cv2.imshow("Multi Person Pose Detection",results.plot())
     cv2.waitKey(0)
     cv2.destroyAllWindows()
     # predict on an image

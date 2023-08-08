@@ -57,13 +57,13 @@ def judge_smoke(pose_result,img):
     left_hand_index = 9
     right_hand_index = 10
 
-    if int(left_angle) < 40 or cal_dis(k, left_hand_index)<0.8:
+    if int(left_angle) < 45 or cal_dis(k, left_hand_index)<0.8:
         if cgr_detect(pose_result, img, left_hand_index):
             return 2
         else:
             return 1
 
-    elif int(right_angle) < 40 or cal_dis(k, left_hand_index)<0.8:
+    elif int(right_angle) < 45 or cal_dis(k, left_hand_index)<0.8:
         if cgr_detect(pose_result, img, right_hand_index):
             return 2
         else:
@@ -197,10 +197,10 @@ def cgr_detect(k, img,direction):
         for i, c in enumerate(scores):
             if c > 0.4:
                 cgr_label(boxes[i], box, img)
-                if count[0] % 10 == 0:
-                    bo = k.xyxy
-                    t = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
-                    cv2.imwrite(f"test/{t}.jpg",img[int(bo[1]):int(bo[3]), int(bo[0]):int(bo[2])])
+                # if count[0] % 10 == 0:
+                #     bo = k.xyxy
+                #     t = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
+                #     cv2.imwrite(f"test/{t}.jpg",img[int(bo[1]):int(bo[3]), int(bo[0]):int(bo[2])])
                     # print("finish!")
                 return True
             else:
