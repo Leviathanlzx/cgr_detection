@@ -9,7 +9,8 @@ import pycuda.autoinit
 from bytetrack_init import bytetrack, make_parser
 from yolov8onnx.utils import xywh2xyxy, nms
 from ultralytics.trackers import BYTETracker
-from test import SR
+
+# from test import SR
 
 f1 = open("model/yolov8m-pose.trt", "rb")
 f2 = open("model/detr.trt", "rb")
@@ -167,9 +168,19 @@ def pose_estimate_with_onnx(frame):
     box = np.array(boxes)[result_boxes].reshape(-1, 4)
     box = xywh2xyxy_rescale(box, scale, True)
     scores = np.array(scores)[result_boxes]
-    cls = numpy.zeros(box.shape[0])
-    box, result = bytetrack(box, scores, cls, tracker)
+    clss = numpy.zeros(box.shape[0])
+    box, result = bytetrack(box, scores, clss, tracker)
     if isinstance(box, numpy.ndarray) and box.shape[0] != 0:
         box = xywh2xyxy_rescale(box, scale, False)
     kpts = np.array(preds_kpts)[result_boxes].reshape(-1, 17, 3) * scale
     return box, scores, result, kpts
+
+
+def cgr_update(box, score):
+    cgr_cls = numpy.zeros(box.shape[0])
+    box, result = bytetrack(box, score, cgr_cls, tracker_cgr)
+    if isinstance(box, numpy.ndarray) and box.shape[0] != 0:
+        boxes = xywh2xyxy_rescale(box, 0, False)
+        return boxes, result
+    else:
+        return np.array([]), np.array([])

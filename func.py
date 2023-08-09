@@ -2,7 +2,7 @@ from datetime import datetime
 import cv2
 import numpy as np
 import torch
-from onnx_inference import cgr_detect_with_onnx
+from ort_inference import cgr_detect_with_onnx, cgr_update
 
 
 class Colors:
@@ -32,13 +32,14 @@ colors = Colors()
 kpt_color = colors.pose_palette[[16, 16, 16, 16, 16, 0, 0, 0, 0, 0, 0, 9, 9, 9, 9, 9, 9]]
 limb_color = colors.pose_palette[[9, 9, 9, 9, 7, 7, 7, 0, 0, 0, 0, 0, 16, 16, 16, 16, 16, 16, 16]]
 skeleton = [[16, 14], [14, 12], [17, 15], [15, 13], [12, 13], [6, 12], [7, 13], [6, 7], [6, 8], [7, 9],
-                         [8, 10], [9, 11], [2, 3], [1, 2], [1, 3], [2, 4], [3, 5], [4, 6], [5, 7]]
-count=[0]
-smoking_threshold = 5  # 吸烟检测阈值，连续检测到吸烟的次数
-no_smoking_threshold = 10 # 非吸烟检测阈值，连续未检测到吸烟的次数
-ids={}
+            [8, 10], [9, 11], [2, 3], [1, 2], [1, 3], [2, 4], [3, 5], [4, 6], [5, 7]]
+count = [0]
+smoking_threshold = 10  # 吸烟检测阈值，连续检测到吸烟的次数
+no_smoking_threshold = 10  # 非吸烟检测阈值，连续未检测到吸烟的次数
+ids = {}
 
-def judge_smoke(pose_result,img):
+
+def judge_smoke(pose_result, img, label):
     """
     判断是否出现吸烟行为。
 
@@ -49,22 +50,22 @@ def judge_smoke(pose_result,img):
 
     返回值:
     0: 未检测到吸烟行为。
-    1: 检测到单手吸烟行为。
-    2: 检测到双手吸烟行为。
+    1: 检测到疑似吸烟行为。
+    2: 检测到吸烟行为。
     """
     k = pose_result.keypoints
     left_angle, right_angle = cal_angle(k)
     left_hand_index = 9
     right_hand_index = 10
 
-    if int(left_angle) < 45 or cal_dis(k, left_hand_index)<0.8:
-        if cgr_detect(pose_result, img, left_hand_index):
+    if int(left_angle) < 45 or cal_dis(k, left_hand_index) < 0.8:
+        if cgr_detect(pose_result, img, left_hand_index, label):
             return 2
         else:
             return 1
 
-    elif int(right_angle) < 45 or cal_dis(k, left_hand_index)<0.8:
-        if cgr_detect(pose_result, img, right_hand_index):
+    elif int(right_angle) < 45 or cal_dis(k, left_hand_index) < 0.8:
+        if cgr_detect(pose_result, img, right_hand_index, label):
             return 2
         else:
             return 1
@@ -73,63 +74,67 @@ def judge_smoke(pose_result,img):
 
 
 def detect_and_draw(pose_result, img):
-    lw = max(round(sum(img.shape) / 2 * 0.003), 2) # 线宽
-
+    lw = max(round(sum(img.shape) / 2 * 0.003), 2)  # 线宽
+    cgrlabel = []
     # 画人物框
     for d in pose_result:
-        conf, idd =float(d.conf), None if d.id is None else int(d.id)
-        if idd not in ids.keys():
-            ids[idd]=np.array([idd,0,0,False])
-        # name = ('' if id is None else f'id:{id} ')
-        # label = (f'{name} {conf:.2f}' if conf else name)
-        # if conf > 0.3:
-        #     box_label(d.xyxy, img, lw, label)
+        conf, idd = float(d.conf), None if d.id is None else int(d.id)
+        if conf > 0.3:
+            if idd not in ids.keys():
+                ids[idd] = np.array([idd, 0, 0, False])
+            # name = ('' if id is None else f'id:{id} ')
+            # label = (f'{name} {conf:.2f}' if conf else name)
+            # if conf > 0.3:
+            #     box_label(d.xyxy, img, lw, label)
 
-        # 时长判断
-        condition = ids[idd]
-        status = judge_smoke(d, img)
-        if status == 2:
-            if condition[1] < smoking_threshold:
+            # 时长判断
+            condition = ids[idd]
+            status = judge_smoke(d, img, cgrlabel)
+            if status == 2:
+                if condition[1] < smoking_threshold:
+                    box_label(d.xyxy, img, 3, str(idd) + "suspicious", (28, 172, 255))
+                condition[1] += 1
+                if condition[2] > 0:
+                    condition[2] -= 1
+            elif status == 1:
                 box_label(d.xyxy, img, 3, str(idd) + "suspicious", (28, 172, 255))
-            condition[1] += 1
-            if condition[2] > 0:
-                condition[2] -= 1
-        elif status == 1:
-            box_label(d.xyxy, img, 3, str(idd) + "suspicious", (28, 172, 255))
-        else:
-            condition[2] += 1
-            if condition[1] > 0:
-                condition[1] -= 1
-        # 根据吸烟检测阈值和非吸烟检测阈值进行判断
-        if condition[1] >= smoking_threshold:
-            condition[3] = True
-            condition[2] = 0
-            # print(f"{id} 吸烟")
-            box_label(d.xyxy, img, 3, "ID" + str(idd) + " smoking", (0, 0, 255))
+            else:
+                condition[2] += 1
+                if condition[1] > 0:
+                    condition[1] -= 1
+            # 根据吸烟检测阈值和非吸烟检测阈值进行判断
+            if condition[1] >= smoking_threshold:
+                condition[3] = True
+                condition[2] = 0
+                # print(f"{id} 吸烟")
+                box_label(d.xyxy, img, 3, "ID" + str(idd) + " smoking", (0, 0, 255))
 
-        elif condition[2] >= no_smoking_threshold:
-            condition[3] = False
+            elif condition[2] >= no_smoking_threshold:
+                condition[3] = False
 
-        ids[idd] = condition
+            ids[idd] = condition
+            # 画骨架
+            key_label(d.keypoints, img, img.shape, kpt_line=True)
             # print(f"{id} 没有吸烟")
         # cv2.putText(img, str(float(dist)),(int(x_coord), int(y_coord)),cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         # cv2.circle(img, (int(x_coord), int(y_coord)), 5, (255, 255, 0), -1, lineType=cv2.LINE_AA)
-    
-    # 画骨架
-    for k in pose_result:
-        key_label(k.keypoints, img,img.shape, kpt_line=True)
+    cgr_box = np.array([t[:4] for t in cgrlabel])
+    cgr_score = np.array([t[4] for t in cgrlabel])
+    cgr_box, cgr_score = cgr_update(cgr_box, cgr_score)
+    for i in cgr_box:
+        cgr_label(i, img)
 
     return img
 
 
-def cal_dis(kpt,direction):
-    nose,wrist,shoulder,hip =kpt[0],kpt[direction],kpt[5],kpt[11]
+def cal_dis(kpt, direction):
+    nose, wrist, shoulder, hip = kpt[0], kpt[direction], kpt[5], kpt[11]
     difference = nose - wrist
-    standard = shoulder-hip
+    standard = shoulder - hip
     # 计算欧氏距离
     distance = np.linalg.norm(difference)
-    standdis= np.linalg.norm(standard)
-    return distance/standdis
+    standdis = np.linalg.norm(standard)
+    return distance / standdis
 
 
 def cal_angle(kpt):
@@ -142,19 +147,19 @@ def cal_angle(kpt):
     # 计算向量的夹角（弧度）
     left_angle_radian = np.arccos(
         np.dot(left_shoulder_vector, left_wrist_vector) / (
-                    np.linalg.norm(left_shoulder_vector) * np.linalg.norm(left_wrist_vector)))
+                np.linalg.norm(left_shoulder_vector) * np.linalg.norm(left_wrist_vector)))
     right_angle_radian = np.arccos(
         np.dot(right_shoulder_vector, right_wrist_vector) / (
-                    np.linalg.norm(right_shoulder_vector) * np.linalg.norm(right_wrist_vector)))
+                np.linalg.norm(right_shoulder_vector) * np.linalg.norm(right_wrist_vector)))
 
     # 将弧度转换为角度
     right_angle_degree = np.degrees(right_angle_radian)
     left_angle_degree = np.degrees(left_angle_radian)
 
-    return left_angle_degree,right_angle_degree
+    return left_angle_degree, right_angle_degree
 
 
-def box_label(box, im, lw, label='', color=(255,255,64), txt_color=(255, 255, 255)):
+def box_label(box, im, lw, label='', color=(255, 255, 64), txt_color=(255, 255, 255)):
     """Add one xyxy box to image with label."""
     p1, p2 = (int(box[0]), int(box[1])), (int(box[2]), int(box[3]))
     cv2.rectangle(im, p1, p2, color, thickness=lw, lineType=cv2.LINE_AA)
@@ -173,35 +178,38 @@ def box_label(box, im, lw, label='', color=(255,255,64), txt_color=(255, 255, 25
                     lineType=cv2.LINE_AA)
 
 
-def cgr_detect(k, img,direction):
+def cgr_detect(k, img, direction, label):
     count[0] += 1
     box = k.xyxy
     right = k.keypoints[0]
     # print("there")
-    length=int(0.5*(box[2]-box[0]))
-    lengths=int(0.4*(box[3]-box[1]))
-    box=box.astype(np.int32)
-    box[1] = np.max([int(right[1]) - length,0])
-    box[3] = np.min([int(right[1]) + length,img.shape[0]])
-    box[0] = np.max([int(right[0]) - lengths,0])
-    box[2] = np.min([int(right[0]) + lengths,img.shape[1]])
-    person = img[box[1]:box[3],box[0]:box[2]]
+    length = int(0.4 * (box[2] - box[0]))
+    lengths = int(0.4 * (box[3] - box[1]))
+    box = box.astype(np.int32)
+    box[1] = np.max([int(right[1]) - length, 0])
+    box[3] = np.min([int(right[1]) + length, img.shape[0]])
+    box[0] = np.max([int(right[0]) - lengths, 0])
+    box[2] = np.min([int(right[0]) + lengths, img.shape[1]])
+    person = img[box[1]:box[3], box[0]:box[2]]
     # cv2.imshow("hands",person)
     # cv2.waitKey(5)
     # if count[0]%5==0:
     #     cv2.imwrite(f"hands/{count[0]}.jpg",person)
 
     if person.shape[0] != 0 and person.shape[1] != 0:
-        boxes, scores=cgr_detect_with_onnx(person)
+        boxes, scores = cgr_detect_with_onnx(person)
         # boxes, scores = cgr_detect_alternative(person)
         for i, c in enumerate(scores):
-            if c > 0.4:
-                cgr_label(boxes[i], box, img)
+            if c > 0.5:
+
+                label.append([int(boxes[i][0]) + int(box[0]), int(boxes[i][1]) + int(box[1]),
+                              int(boxes[i][2]) + int(box[0]), int(boxes[i][3]) + int(box[1]), c])
+                # cgr_label(boxes[i], box, img)
                 # if count[0] % 10 == 0:
                 #     bo = k.xyxy
                 #     t = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
                 #     cv2.imwrite(f"test/{t}.jpg",img[int(bo[1]):int(bo[3]), int(bo[0]):int(bo[2])])
-                    # print("finish!")
+                # print("finish!")
                 return True
             else:
                 return False
@@ -221,15 +229,15 @@ def cgr_detect(k, img,direction):
     #     person = img[int(box[1]):int(box[3]), int(box[0]):int(box[2])]
 
 
-
-def cgr_label(box, ori, im, label='Cig', color=(0, 0, 255), txt_color=(255, 255, 255)):
+def cgr_label(box, im, label='Cig', color=(0, 0, 255), txt_color=(255, 255, 255)):
     """Add one xyxy box to image with label."""
     # lw = max(round(sum(im.shape) / 2 * 0.003), 2)
-    lw=3
-    if isinstance(box, torch.Tensor):
-        box = box.tolist()
-    p1, p2 = (int(box[0]) + int(ori[0]), int(box[1]) + int(ori[1])), (
-    int(box[2]) + int(ori[0]), int(box[3]) + int(ori[1]))
+    lw = 3
+    # if isinstance(box, torch.Tensor):
+    #     box = box.tolist()
+    # p1, p2 = (int(box[0]) + int(ori[0]), int(box[1]) + int(ori[1])), (
+    # int(box[2]) + int(ori[0]), int(box[3]) + int(ori[1]))
+    p1, p2 = (int(box[0]), int(box[1])), (int(box[2]), int(box[3]))
     cv2.rectangle(im, p1, p2, color, thickness=lw, lineType=cv2.LINE_AA)
     if label:
         tf = max(lw - 1, 1)  # font thickness
@@ -246,7 +254,7 @@ def cgr_label(box, ori, im, label='Cig', color=(0, 0, 255), txt_color=(255, 255,
                     lineType=cv2.LINE_AA)
 
 
-def key_label(kpts,im, shape=(640, 640), radius=5, kpt_line=True):
+def key_label(kpts, im, shape=(640, 640), radius=5, kpt_line=True):
     """Plot keypoints on the image.
 
     Args:

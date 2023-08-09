@@ -9,7 +9,7 @@ from yolov8onnx.utils import xywh2xyxy, nms
 from ultralytics.trackers import BYTETracker
 from test import SR
 
-cgr_model=rt.InferenceSession("model/rtdetr-best.onnx")
+cgr_model=rt.InferenceSession("model/last.onnx")
 input_name = cgr_model.get_inputs()[0].name
 label_name = cgr_model.get_outputs()[0].name
 pose_model=rt.InferenceSession("model/yolov8n-pose.onnx")
@@ -285,3 +285,12 @@ def pose_estimate_with_onnx(frame):
         box= xywh2xyxy_rescale(box,scale,False)
     kpts = np.array(preds_kpts)[result_boxes].reshape(-1,17,3)*scale
     return box,scores,result,kpts
+
+def cgr_update(box,score):
+    cgr_cls=numpy.zeros(box.shape[0])
+    box,result = bytetrack(box, score, cgr_cls,tracker_cgr)
+    if isinstance(box, numpy.ndarray) and box.shape[0]!=0:
+        boxes = xywh2xyxy_rescale(box, 0, False)
+        return boxes,result
+    else:
+        return np.array([]),np.array([])
