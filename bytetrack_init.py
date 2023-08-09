@@ -19,6 +19,7 @@ def make_parser():
 def bytetrack(bboxes, scores,cls,tracker):
     if bboxes.shape[0]>0:
         online_targets = tracker.update(bboxes, scores,cls)
+        online_targets = sorted(online_targets, key=lambda x: x[-1])
         return np.array([t[:4] for t in online_targets]),[t[4] for t in online_targets]
     else:
         return None,None

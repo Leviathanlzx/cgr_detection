@@ -2,7 +2,7 @@ from datetime import datetime
 import cv2
 import numpy as np
 import torch
-from ort_inference import cgr_detect_with_onnx
+from onnx_inference import cgr_detect_with_onnx
 
 
 class Colors:
@@ -284,20 +284,4 @@ def key_label(kpts,im, shape=(640, 640), radius=5, kpt_line=True):
             if pos2[0] % shape[1] == 0 or pos2[1] % shape[0] == 0 or pos2[0] < 0 or pos2[1] < 0:
                 continue
             cv2.line(im, pos1, pos2, [int(x) for x in limb_color[i]], thickness=2, lineType=cv2.LINE_AA)
-
-
-# def lock_hands(pose_result,img,direction):
-#     for i, k in enumerate(pose_result):
-#         right=k.keypoints.xy[0][direction]
-#         box=k.boxes.xyxy.squeeze().tolist()
-#         if right[0]+32>int(box[2]):
-#             br=right[0]
-#
-#         # cv2.circle(img, (int(right[0]), int(right[1])), 5, (255,255,255), -1, lineType=cv2.LINE_AA)
-#         try:
-#             if count[0]%10==0:
-#                 cv2.imwrite(f"hands/{count[0]}.jpg",img[int(right[1])-64:int(right[1])+64,int(right[0])-32:int(right[0])+32])
-#             return img[int(right[1])-64:int(right[1])+64,int(right[0])-32:int(right[0])+32]
-#         except:
-#             return img[int(box[1]):int(box[3]), int(box[0]):int(box[2])]
 
