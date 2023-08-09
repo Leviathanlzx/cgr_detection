@@ -9,7 +9,7 @@ from yolov8onnx.utils import xywh2xyxy, nms
 from ultralytics.trackers import BYTETracker
 from test import SR
 
-cgr_model=rt.InferenceSession("model/last.onnx")
+cgr_model=rt.InferenceSession("model/rtdetr-best.onnx")
 input_name = cgr_model.get_inputs()[0].name
 label_name = cgr_model.get_outputs()[0].name
 pose_model=rt.InferenceSession("model/yolov8n-pose.onnx")
