@@ -256,12 +256,39 @@ def cgr_detect_alternative(frame):
     box = xywh2xyxy_rescale(box, scale)
     scores = np.array(scores)[result_boxes]
     return box,scores
-
-def cgr_update(box,score):
-    cgr_cls=numpy.zeros(box.shape[0])
-    box,result = bytetrack(box, score, cgr_cls,tracker_cgr)
-    if isinstance(box, numpy.ndarray) and box.shape[0]!=0:
-        boxes = xywh2xyxy_rescale(box, 0, False)
-        return boxes,result
-    else:
-        return np.array([]),np.array([])
+# if __name__ == '__main__':
+#     # cap= cv2.VideoCapture(0)
+#     # cap.set(4, 1080)
+#     # cap.set(3, 720)
+#     # cv2.namedWindow("Detected Objects", cv2.WINDOW_NORMAL)
+#     # cv2.resizeWindow("Detected Objects", 1920,1080)
+#     # while cap.isOpened():
+#     #
+#     #     # Read frame from the video
+#     #     ret, frame = cap.read()
+#     #
+#     #     if not ret:
+#     #         break
+#     frame=cv2.imread("hands/10.jpg")
+#     # image = cv2.imread("hands/220.jpg")
+#     img,border=prepare_input(frame)
+#     start_time = time.time()
+#     # Create tensor from external memory
+#     input_tensor = ov.Tensor(array=img)
+#     # Set input tensor for model with one input
+#     infer_request.set_input_tensor(input_tensor)
+#     infer_request.infer()
+#     # infer_request.start_async()
+#     # infer_request.wait()
+#     # Get output tensor for model with one output
+#     output = infer_request.get_output_tensor()
+#     output_buffer = output.data
+#     boxes, scores, class_ids=process_output(output_buffer,0.4,0.8,frame,img,border)
+#     current_time = time.time()
+#     elapsed_time = current_time - start_time
+#     print(boxes)
+#     combined_img = draw_detections(frame, boxes, scores, class_ids, mask_alpha=0.4)
+#     cv2.imwrite("compare1.jpg",combined_img)
+#     # cv2.imshow("Detected Objects", combined_img)
+#     # if cv2.waitKey(1) & 0xFF == ord('q'):
+#     #     break

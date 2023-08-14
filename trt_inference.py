@@ -9,10 +9,9 @@ import pycuda.autoinit
 from bytetrack_init import bytetrack, make_parser
 from yolov8onnx.utils import xywh2xyxy, nms
 from ultralytics.trackers import BYTETracker
+from test import SR
 
-# from test import SR
-
-f1 = open("model/yolov8m-pose.trt", "rb")
+f1 = open("model/yolov8x-pose.trt", "rb")
 f2 = open("model/detr.trt", "rb")
 runtime = trt.Runtime(trt.Logger(trt.Logger.WARNING))
 engine1 = runtime.deserialize_cuda_engine(f1.read())
@@ -26,18 +25,17 @@ d_input1 = cuda.mem_alloc(1 * img.nbytes)
 d_output1 = cuda.mem_alloc(1 * output1.nbytes)
 
 bindings1 = [int(d_input1), int(d_output1)]
-stream1 = cuda.Stream()
 
 output2 = np.empty([1, 300, 5], dtype=np.float32)
 d_input2 = cuda.mem_alloc(1 * img.nbytes)
 d_output2 = cuda.mem_alloc(1 * output2.nbytes)
 
 bindings2 = [int(d_input2), int(d_output2)]
-stream2 = cuda.Stream()
+stream = cuda.Stream()
 
 args = make_parser().parse_args()
 tracker = BYTETracker(args, frame_rate=30)
-tracker_cgr = BYTETracker(args, frame_rate=60)
+tracker_cgr = BYTETracker(args, frame_rate=30)
 
 
 def predict(stream, bindings, batch, context, d_input, d_output, output):  # result gets copied into output
@@ -111,14 +109,22 @@ def cgr_detect_with_onnx(frame):
     image = np.zeros((length, length, 3), np.uint8)
     image[0:height, 0:width] = frame
     scale = length / 640
-    # image = cv2.resize(image, (640, 640))
-    # image = image.astype(np.float32) / 255.0
-    # input_img = np.transpose(image, [2, 0, 1])
-    # input_img = input_img[np.newaxis, :, :, :]
+    image = cv2.resize(image, (640, 640))
+    image = image.astype(np.float32) / 255.0
+    image = image[:, :, ::-1]
+    input_img = np.transpose(image, [2, 0, 1])
+    input_img = input_img[np.newaxis, :, :, :]
+    blob = np.ascontiguousarray(input_img, dtype=np.float32)
     # Create tensor from external memory
-    blob = cv2.dnn.blobFromImage(image, scalefactor=1 / 255, size=(640, 640), swapRB=True)
-    outputs = predict(stream2, bindings2, blob, context2, d_input2, d_output2, output2)
+    # blob = cv2.dnn.blobFromImage(image, scalefactor=1 / 255, size=(640, 640), swapRB=True)
+    # blob=blob.astype(np.float16)
+    start_time = time.time()
+    outputs = predict(stream, bindings2, blob, context2, d_input2, d_output2, output2)
+    current_time = time.time()
+    elapsed_time = current_time - start_time
+    # print("done!", elapsed_time)
     # outputs = np.transpose(outputs[0],[0,2,1])
+    length /= 3
     boxes, scores = postprocess(outputs.squeeze(), 0.35, (length, length))
     # boxes, result = bytetrack(boxes, scores,class_ids, tracker_cgr)
     if isinstance(boxes, numpy.ndarray) and boxes.shape[0] != 0:
@@ -129,18 +135,23 @@ def cgr_detect_with_onnx(frame):
 
 
 def pose_estimate_with_onnx(frame):
+    start_time = time.time()
     [height, width, _] = frame.shape
     length = max((height, width))
     image = np.zeros((length, length, 3), np.uint8)
     image[0:height, 0:width] = frame
+
+    image = cv2.resize(image, (640, 640))
     scale = length / 640
-    # image = cv2.resize(image, (640, 640))
-    # image = image.astype(np.float32) / 255.0
-    # input_img = np.transpose(image, [2, 0, 1])
-    # input_img = input_img[np.newaxis, :, :, :]
-    blob = cv2.dnn.blobFromImage(image, scalefactor=1 / 255, size=(640, 640), swapRB=True)
-    # 基于OpenVINO实现推理计算
-    outputs = predict(stream1, bindings1, blob, context1, d_input1, d_output1, output1)
+    image = image.astype(np.float32) / 255.0
+    image = image[:, :, ::-1]
+    input_img = np.transpose(image, [2, 0, 1])
+    blob = input_img[np.newaxis, :, :, :]
+    blob = np.ascontiguousarray(blob, dtype=np.float32)
+    # blob = cv2.dnn.blobFromImage(image, scalefactor=1 / 255, size=(640, 640), swapRB=True)
+    # 基于tensorRT实现推理计算
+
+    outputs = predict(stream, bindings1, blob, context1, d_input1, d_output1, output1)
     outputs = np.transpose(outputs, [0, 2, 1])
 
     classes_scores = outputs[:, :, 4]
@@ -173,13 +184,14 @@ def pose_estimate_with_onnx(frame):
     if isinstance(box, numpy.ndarray) and box.shape[0] != 0:
         box = xywh2xyxy_rescale(box, scale, False)
     kpts = np.array(preds_kpts)[result_boxes].reshape(-1, 17, 3) * scale
+
     return box, scores, result, kpts
 
 
 def cgr_update(box, score):
     cgr_cls = numpy.zeros(box.shape[0])
     box, result = bytetrack(box, score, cgr_cls, tracker_cgr)
-    if isinstance(box, numpy.ndarray) and box.shape[0] != 0:
+    if isinstance(box, numpy.ndarray) or box.shape[0] != 0:
         boxes = xywh2xyxy_rescale(box, 0, False)
         return boxes, result
     else:

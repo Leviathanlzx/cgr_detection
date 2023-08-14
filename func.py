@@ -2,7 +2,7 @@ from datetime import datetime
 import cv2
 import numpy as np
 import torch
-from ort_inference import cgr_detect_with_onnx, cgr_update
+from trt_inference import cgr_detect_with_onnx, cgr_update
 
 
 class Colors:
@@ -34,7 +34,7 @@ limb_color = colors.pose_palette[[9, 9, 9, 9, 7, 7, 7, 0, 0, 0, 0, 0, 16, 16, 16
 skeleton = [[16, 14], [14, 12], [17, 15], [15, 13], [12, 13], [6, 12], [7, 13], [6, 7], [6, 8], [7, 9],
             [8, 10], [9, 11], [2, 3], [1, 2], [1, 3], [2, 4], [3, 5], [4, 6], [5, 7]]
 count = [0]
-smoking_threshold = 10  # 吸烟检测阈值，连续检测到吸烟的次数
+smoking_threshold = 50  # 吸烟检测阈值，连续检测到吸烟的次数
 no_smoking_threshold = 10  # 非吸烟检测阈值，连续未检测到吸烟的次数
 ids = {}
 
@@ -57,14 +57,13 @@ def judge_smoke(pose_result, img, label):
     left_angle, right_angle = cal_angle(k)
     left_hand_index = 9
     right_hand_index = 10
-
-    if int(left_angle) < 45 or cal_dis(k, left_hand_index) < 0.8:
+    if int(left_angle) < 55 or cal_dis(k, left_hand_index) < 0.8:
         if cgr_detect(pose_result, img, left_hand_index, label):
             return 2
         else:
             return 1
 
-    elif int(right_angle) < 45 or cal_dis(k, left_hand_index) < 0.8:
+    elif int(right_angle) < 55 or cal_dis(k, right_hand_index) < 0.8:
         if cgr_detect(pose_result, img, right_hand_index, label):
             return 2
         else:
@@ -79,48 +78,53 @@ def detect_and_draw(pose_result, img):
     # 画人物框
     for d in pose_result:
         conf, idd = float(d.conf), None if d.id is None else int(d.id)
-        if conf > 0.3:
-            if idd not in ids.keys():
-                ids[idd] = np.array([idd, 0, 0, False])
-            # name = ('' if id is None else f'id:{id} ')
-            # label = (f'{name} {conf:.2f}' if conf else name)
-            # if conf > 0.3:
-            #     box_label(d.xyxy, img, lw, label)
+        if idd not in ids.keys():
+            ids[idd] = np.array([idd, 0, 0, False])
+        # name = ('' if id is None else f'id:{id} ')
+        # label = (f'{name} {conf:.2f}' if conf else name)
+        # if conf > 0.3:
+        #     box_label(d.xyxy, img, lw, label)
 
-            # 时长判断
-            condition = ids[idd]
-            status = judge_smoke(d, img, cgrlabel)
-            if status == 2:
-                if condition[1] < smoking_threshold:
-                    box_label(d.xyxy, img, 3, str(idd) + "suspicious", (28, 172, 255))
-                condition[1] += 1
-                if condition[2] > 0:
-                    condition[2] -= 1
-            elif status == 1:
-                box_label(d.xyxy, img, 3, str(idd) + "suspicious", (28, 172, 255))
-            else:
-                condition[2] += 1
-                if condition[1] > 0:
-                    condition[1] -= 1
-            # 根据吸烟检测阈值和非吸烟检测阈值进行判断
-            if condition[1] >= smoking_threshold:
-                condition[3] = True
-                condition[2] = 0
-                # print(f"{id} 吸烟")
-                box_label(d.xyxy, img, 3, "ID" + str(idd) + " smoking", (0, 0, 255))
+        # 时长判断
+        condition = ids[idd]
+        status = judge_smoke(d, img, cgrlabel)
 
-            elif condition[2] >= no_smoking_threshold:
-                condition[3] = False
+        if status == 2:
+            if condition[1] < 100:
+                condition[1] += 10
+            if condition[1] < smoking_threshold:
+                box_label(d.xyxy, img, 3, "suspicious", (28, 172, 255))
 
-            ids[idd] = condition
-            # 画骨架
-            key_label(d.keypoints, img, img.shape, kpt_line=True)
-            # print(f"{id} 没有吸烟")
-        # cv2.putText(img, str(float(dist)),(int(x_coord), int(y_coord)),cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-        # cv2.circle(img, (int(x_coord), int(y_coord)), 5, (255, 255, 0), -1, lineType=cv2.LINE_AA)
+            # if condition[2] > 0:
+            #     condition[2] -= 1
+        elif status == 1:
+            if condition[1] > 0:
+                condition[1] -= 1
+            box_label(d.xyxy, img, 3, "suspicious", (28, 172, 255))
+        else:
+            if condition[1] > 0:
+                condition[1] -= 1
+
+        if condition[1] > smoking_threshold:
+            box_label(d.xyxy, img, 3, "ID" + str(idd) + " smoking", (0, 0, 255))
+        # 根据吸烟检测阈值和非吸烟检测阈值进行判断
+        #             if condition[1] >= smoking_threshold:
+        #                 condition[3] = True
+        #                 condition[2] = 0
+        #                 # print(f"{id} 吸烟")
+
+        #             elif condition[2] >= no_smoking_threshold:
+        #                 condition[1]=0
+        #                 condition[3] = False
+
+        ids[idd] = condition
+        # print(condition)
+        # 画骨架
+        key_label(d.keypoints, img, img.shape, kpt_line=True)
+        # print(f"{id} 没有吸烟")
     cgr_box = np.array([t[:4] for t in cgrlabel])
-    cgr_score = np.array([t[4] for t in cgrlabel])
-    cgr_box, cgr_score = cgr_update(cgr_box, cgr_score)
+    # cgr_score = np.array([t[4] for t in cgrlabel])
+    # cgr_box,cgr_score=cgr_update(cgr_box,cgr_score)
     for i in cgr_box:
         cgr_label(i, img)
 
@@ -184,7 +188,7 @@ def cgr_detect(k, img, direction, label):
     right = k.keypoints[0]
     # print("there")
     length = int(0.4 * (box[2] - box[0]))
-    lengths = int(0.4 * (box[3] - box[1]))
+    lengths = int(0.3 * (box[3] - box[1]))
     box = box.astype(np.int32)
     box[1] = np.max([int(right[1]) - length, 0])
     box[3] = np.min([int(right[1]) + length, img.shape[0]])
@@ -193,14 +197,15 @@ def cgr_detect(k, img, direction, label):
     person = img[box[1]:box[3], box[0]:box[2]]
     # cv2.imshow("hands",person)
     # cv2.waitKey(5)
-    # if count[0]%5==0:
-    #     cv2.imwrite(f"hands/{count[0]}.jpg",person)
+    if count[0] % 5 == 0:
+        cv2.imwrite(f"video/{k.id}.jpg", person)
 
     if person.shape[0] != 0 and person.shape[1] != 0:
         boxes, scores = cgr_detect_with_onnx(person)
         # boxes, scores = cgr_detect_alternative(person)
         for i, c in enumerate(scores):
-            if c > 0.5:
+            print(c)
+            if c > 0.45:
 
                 label.append([int(boxes[i][0]) + int(box[0]), int(boxes[i][1]) + int(box[1]),
                               int(boxes[i][2]) + int(box[0]), int(boxes[i][3]) + int(box[1]), c])
