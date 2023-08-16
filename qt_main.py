@@ -22,13 +22,13 @@ class SmokeDetectionApp(QMainWindow):
         self.label.setScaledContents(True)
         parser = argparse.ArgumentParser()
         parser.add_argument('--cgr_conf', type=float,
-                            default=0.4, help='inference size (pixels)')
+                            default=0.4, help='香烟检测阈值')
         parser.add_argument('--skeleton', type=bool,
-                            default=False, help='inference size (pixels)')
+                            default=False, help='是否画出骨架')
         parser.add_argument('--cig_box', type=bool,
-                            default=False, help='inference size (pixels)')
+                            default=False, help='是否画出香烟框')
         parser.add_argument('--threshold', type=int,
-                            default=50, help='inference size (pixels)')
+                            default=50, help='连续检测阈值（不建议改动）')
         self.opt = parser.parse_args()
 
 
