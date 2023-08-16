@@ -2,7 +2,7 @@ from datetime import datetime
 import cv2
 import numpy as np
 import torch
-from trt_inference import cgr_detect_with_onnx, cgr_update
+from onnx_inference import cgr_detect_with_onnx
 
 
 class Colors:
@@ -34,8 +34,7 @@ limb_color = colors.pose_palette[[9, 9, 9, 9, 7, 7, 7, 0, 0, 0, 0, 0, 16, 16, 16
 skeleton = [[16, 14], [14, 12], [17, 15], [15, 13], [12, 13], [6, 12], [7, 13], [6, 7], [6, 8], [7, 9],
             [8, 10], [9, 11], [2, 3], [1, 2], [1, 3], [2, 4], [3, 5], [4, 6], [5, 7]]
 count = [0]
-smoking_threshold = 50  # 吸烟检测阈值，连续检测到吸烟的次数
-no_smoking_threshold = 10  # 非吸烟检测阈值，连续未检测到吸烟的次数
+cgr_conf=[0.4]# 吸烟检测阈值，连续检测到吸烟的次数
 ids = {}
 
 
@@ -72,8 +71,9 @@ def judge_smoke(pose_result, img, label):
     return 0
 
 
-def detect_and_draw(pose_result, img):
-    lw = max(round(sum(img.shape) / 2 * 0.003), 2)  # 线宽
+def detect_and_draw(pose_result, img,opt):
+    smoking_threshold=opt.threshold
+    cgr_conf[0]=opt.cgr_conf
     cgrlabel = []
     # 画人物框
     for d in pose_result:
@@ -93,20 +93,20 @@ def detect_and_draw(pose_result, img):
             if condition[1] < 100:
                 condition[1] += 10
             if condition[1] < smoking_threshold:
-                box_label(d.xyxy, img, 3, "suspicious", (28, 172, 255))
+                box_label(d.xyxy, img, 3, "Suspicious", (28, 172, 255))
 
             # if condition[2] > 0:
             #     condition[2] -= 1
         elif status == 1:
             if condition[1] > 0:
                 condition[1] -= 1
-            box_label(d.xyxy, img, 3, "suspicious", (28, 172, 255))
+            box_label(d.xyxy, img, 3, "Suspicious", (28, 172, 255))
         else:
             if condition[1] > 0:
                 condition[1] -= 1
 
         if condition[1] > smoking_threshold:
-            box_label(d.xyxy, img, 3, "ID" + str(idd) + " smoking", (0, 0, 255))
+            box_label(d.xyxy, img, 3, "Target is Smoking", (0, 0, 255))
         # 根据吸烟检测阈值和非吸烟检测阈值进行判断
         #             if condition[1] >= smoking_threshold:
         #                 condition[3] = True
@@ -120,13 +120,15 @@ def detect_and_draw(pose_result, img):
         ids[idd] = condition
         # print(condition)
         # 画骨架
-        key_label(d.keypoints, img, img.shape, kpt_line=True)
+        if opt.skeleton:
+            key_label(d.keypoints, img, img.shape, kpt_line=True)
         # print(f"{id} 没有吸烟")
     cgr_box = np.array([t[:4] for t in cgrlabel])
     # cgr_score = np.array([t[4] for t in cgrlabel])
     # cgr_box,cgr_score=cgr_update(cgr_box,cgr_score)
-    for i in cgr_box:
-        cgr_label(i, img)
+    if opt.cig_box:
+        for i in cgr_box:
+            cgr_label(i, img)
 
     return img
 
@@ -205,8 +207,7 @@ def cgr_detect(k, img, direction, label):
         # boxes, scores = cgr_detect_alternative(person)
         for i, c in enumerate(scores):
             print(c)
-            if c > 0.45:
-
+            if c > cgr_conf[0]:
                 label.append([int(boxes[i][0]) + int(box[0]), int(boxes[i][1]) + int(box[1]),
                               int(boxes[i][2]) + int(box[0]), int(boxes[i][3]) + int(box[1]), c])
                 # cgr_label(boxes[i], box, img)

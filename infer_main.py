@@ -19,19 +19,19 @@ def mp4save():
     return out
 
 
-def cgr_detect(image):
+def cgr_detect(image,opt):
     start_time = time.time()
     box, score, ids, kpts = pose_estimate_with_onnx(image)
     if ids and box is not None:
         pose_result = [Result(i, j, k, m) for i, j, k, m in zip(box, score, ids, kpts)]
-        image = detect_and_draw(pose_result, image)
+        image = detect_and_draw(pose_result, image,opt)
     current_time = time.time()
     elapsed_time = current_time - start_time
     # 计算实时帧率
     fps = 1 / elapsed_time
     # 在帧上绘制实时帧率
     cv2.putText(image, f"FPS: {round(fps, 2)}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-    return image
+    return image,fps,elapsed_time
 
 
 if __name__ == '__main__':

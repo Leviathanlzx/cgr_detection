@@ -125,7 +125,7 @@ def cgr_detect_with_onnx(frame):
     # print("done!", elapsed_time)
     # outputs = np.transpose(outputs[0],[0,2,1])
     length /= 3
-    boxes, scores = postprocess(outputs.squeeze(), 0.35, (length, length))
+    boxes, scores = postprocess(outputs.squeeze(), 0.25, (length, length))
     # boxes, result = bytetrack(boxes, scores,class_ids, tracker_cgr)
     if isinstance(boxes, numpy.ndarray) and boxes.shape[0] != 0:
         # boxes = xywh2xyxy_rescale(boxes, 0, False)

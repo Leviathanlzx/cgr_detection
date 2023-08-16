@@ -21,16 +21,6 @@ tracker = BYTETracker(args, frame_rate=30)
 tracker_cgr=BYTETracker(args, frame_rate=60)
 
 
-def smooth_detections(detections, kf):
-
-    smoothed_detections = []
-    for detection in detections:
-        prediction = kf.predict()
-        if prediction is not None:
-            smoothed_detections.append(prediction)
-        kf.update(detection)
-    return smoothed_detections
-
 def prepare_input(image):
     input_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
@@ -167,7 +157,7 @@ def cgr_detect_with_onnx(image):
     # Get output tensor for model with one output
     output = infer_cgr.get_output_tensor()
     output_buffer = output.data
-    boxes, scores, class_ids = process_output(output_buffer, 0.4, 0.7, image, img,border)
+    boxes, scores, class_ids = process_output(output_buffer, 0.25, 0.7, image, img,border)
     boxes=np.array(boxes)
     scores=np.array(scores)
     class_ids=np.array(class_ids)
@@ -176,7 +166,7 @@ def cgr_detect_with_onnx(image):
         # boxes = xywh2xyxy_rescale(boxes, 0, False)
         return boxes,scores
     else:
-        return [],[],[]
+        return [],[]
 
 def pose_estimate_with_onnx(frame):
     [height, width, _] = frame.shape
@@ -184,7 +174,6 @@ def pose_estimate_with_onnx(frame):
     image = np.zeros((length, length, 3), np.uint8)
     image[0:height, 0:width] = frame
     scale = length / 640
-
     blob = cv2.dnn.blobFromImage(image, scalefactor=1 / 255, size=(640, 640), swapRB=True)
     # 基于OpenVINO实现推理计算
     outputs = infer_pose.infer(blob)[output_node]
@@ -256,6 +245,7 @@ def cgr_detect_alternative(frame):
     box = xywh2xyxy_rescale(box, scale)
     scores = np.array(scores)[result_boxes]
     return box,scores
+
 # if __name__ == '__main__':
 #     # cap= cv2.VideoCapture(0)
 #     # cap.set(4, 1080)

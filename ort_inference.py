@@ -20,16 +20,6 @@ tracker = BYTETracker(args, frame_rate=30)
 tracker_cgr=BYTETracker(args, frame_rate=60)
 
 
-def smooth_detections(detections, kf):
-
-    smoothed_detections = []
-    for detection in detections:
-        prediction = kf.predict()
-        if prediction is not None:
-            smoothed_detections.append(prediction)
-        kf.update(detection)
-    return smoothed_detections
-
 def prepare_input(image):
     input_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
@@ -226,12 +216,13 @@ def cgr_detect_with_onnx(frame):
     scale = length / 640
     image = cv2.resize(image, (640, 640))
     image = image.astype(np.float32) / 255.0
+    image = image[:, :, ::-1]
     input_img = np.transpose(image, [2, 0, 1])
     input_img = input_img[np.newaxis, :, :, :]
     # Create tensor from external memory
     outputs = cgr_model.run([label_name], {input_name: input_img})
     output_buffer=np.transpose(outputs[0],[0,2,1])
-    boxes, scores= postprocess(outputs[0].squeeze(),0.35,(length/3,length/3))
+    boxes, scores= postprocess(outputs[0].squeeze(),0.25,(length/3,length/3))
     # boxes, result = bytetrack(boxes, scores,class_ids, tracker_cgr)
     if isinstance(boxes, numpy.ndarray) and boxes.shape[0]!=0:
         # boxes = xywh2xyxy_rescale(boxes, 0, False)
@@ -247,6 +238,7 @@ def pose_estimate_with_onnx(frame):
     scale = length / 640
     image = cv2.resize(image, (640, 640))
     image = image.astype(np.float32) / 255.0
+    image = image[:, :, ::-1]
     input_img = np.transpose(image, [2, 0, 1])
     input_img = input_img[np.newaxis, :, :, :]
     # blob = cv2.dnn.blobFromImage(image, scalefactor=1 / 255, size=(640, 640), swapRB=True)
