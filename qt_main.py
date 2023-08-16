@@ -3,7 +3,7 @@ import sys
 
 import cv2
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.uic import loadUi
 from PyQt5 import QtCore
@@ -73,11 +73,6 @@ class SmokeDetectionApp(QMainWindow):
         self.opt.threshold=self.detect_Slider.value()
         self.cgr_label.setText(str(self.cgr_Slider.value()/100))
         self.detect_label.setText(str(self.detect_Slider.value()))
-
-    def detect_smoke(self):
-        # Implement your smoke detection logic here
-        # Update UI components accordingly
-        pass
 
 
     def load_file(self):

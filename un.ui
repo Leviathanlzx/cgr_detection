@@ -146,7 +146,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>开始</string>
+         <string>开始/继续</string>
         </property>
        </widget>
       </item>
