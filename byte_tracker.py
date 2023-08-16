@@ -238,7 +238,7 @@ class BYTETracker:
         # association the untrack to the low score detections
         detections_second = self.init_track(dets_second, scores_second, cls_second, img)
         r_tracked_stracks = [strack_pool[i] for i in u_track if strack_pool[i].state == TrackState.Tracked]
-        # TODO
+        #
         dists = matching.iou_distance(r_tracked_stracks, detections_second)
         matches, u_track, u_detection_second = matching.linear_assignment(dists, thresh=0.5)
         for itracked, idet in matches:
@@ -305,7 +305,6 @@ class BYTETracker:
     def get_dists(self, tracks, detections):
         """Calculates the distance between tracks and detections using IOU and fuses scores."""
         dists = matching.iou_distance(tracks, detections)
-        # TODO: mot20
         # if not self.args.mot20:
         dists = matching.fuse_score(dists, detections)
         return dists
