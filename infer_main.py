@@ -3,12 +3,14 @@ import time
 from onnx_inference import pose_estimate_with_onnx
 from func import detect_and_draw
 
+
 class Result:
     def __init__(self,box,score,id,kpts):
         self.xyxy=box
         self.conf=score
         self.id=id
         self.keypoints=kpts
+
 
 def mp4save():
     frame_width = 1920  # Width of the frames in the output video
@@ -42,8 +44,6 @@ if __name__ == '__main__':
     cv2.namedWindow("Multi Person Pose Detection", cv2.WINDOW_NORMAL)
     cv2.resizeWindow("Multi Person Pose Detection", 1920, 1080)
     out = mp4save()
-    i = 0
-    count = 3
 
     while cap.isOpened():
         start_time = time.time()
