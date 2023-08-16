@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from typing import Tuple
 import openvino.runtime as ov
-from onnx_inference import *
+from ov_inference import *
 
 core = ov.Core()
 compiled_model = core.compile_model("models/yolov8n-pose.onnx", "AUTO")

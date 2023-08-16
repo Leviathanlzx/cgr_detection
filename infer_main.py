@@ -1,6 +1,6 @@
 import cv2
 import time
-from onnx_inference import pose_estimate_with_onnx
+from ov_inference import pose_estimate_with_onnx
 from func import detect_and_draw
 
 

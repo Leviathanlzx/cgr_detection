@@ -2,7 +2,7 @@ from datetime import datetime
 import cv2
 import numpy as np
 import torch
-from onnx_inference import cgr_detect_with_onnx
+from ov_inference import cgr_detect_with_onnx
 
 
 class Colors:
@@ -189,7 +189,6 @@ def cgr_detect(k, img, direction, label):
         boxes, scores = cgr_detect_with_onnx(person)
         # boxes, scores = cgr_detect_alternative(person)
         for i, c in enumerate(scores):
-            print(c)
             if c > cgr_conf[0]:
                 label.append([int(boxes[i][0]) + int(box[0]), int(boxes[i][1]) + int(box[1]),
                               int(boxes[i][2]) + int(box[0]), int(boxes[i][3]) + int(box[1]), c])
