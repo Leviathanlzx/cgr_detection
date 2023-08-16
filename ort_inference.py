@@ -2,10 +2,8 @@ import time
 import cv2
 import numpy
 import numpy as np
-from typing import Tuple
 import onnxruntime as rt
 from bytetrack_init import bytetrack,make_parser
-from yolov8onnx.utils import nms
 from ultralytics.trackers import BYTETracker
 # from test import SR
 
@@ -18,53 +16,6 @@ label_names = pose_model.get_outputs()[0].name
 args = make_parser().parse_args()
 tracker = BYTETracker(args, frame_rate=30)
 tracker_cgr=BYTETracker(args, frame_rate=60)
-
-
-def prepare_input(image):
-    input_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-    # Resize input image
-    input_img,border = proportional_resize_with_padding(input_img, (640,640))
-
-    # Scale input pixel values to 0 to 1
-    input_img = input_img / 255.0
-    input_img = input_img.transpose(2, 0, 1)
-    input_tensor = input_img[np.newaxis, :, :, :].astype(np.float32)
-    return input_tensor,border
-
-
-def process_output(output,conf_threshold,iou_threshold,img,inputimg,border):
-    predictions = np.squeeze(output[0]).T
-
-    # Filter out object confidence scores below threshold
-    scores = np.max(predictions[:, 4:], axis=1)
-    predictions = predictions[scores > conf_threshold, :]
-    scores = scores[scores > conf_threshold]
-
-    if len(scores) == 0:
-        return [], [], []
-
-    # Get the class with the highest confidence
-    class_ids = np.argmax(predictions[:, 4:], axis=1)
-
-    # Get bounding boxes for each object
-    boxes =extract_boxes(predictions,img,inputimg,border)
-    # Apply non-maxima suppression to suppress weak, overlapping bounding boxes
-    indices = nms(boxes, scores, iou_threshold)
-    # indices = nms(torch.tensor(boxes), torch.tensor(scores), iou_threshold)
-
-    return boxes[indices], scores[indices], class_ids[indices]
-
-
-def extract_boxes(predictions,ori,inputimg,border):
-    # Extract boxes from predictions
-    boxes = predictions[:, :4]
-    boxes = bbox_cxcywh_to_xyxy(boxes)
-    # Scale boxes to original image dimensions
-    boxes = rscale_box_with_padding((border[4],border[5]),boxes,(ori.shape[1],ori.shape[0]),border)
-    # boxes = resize_box_with_padding(boxes,ori,inputimg)
-    # Convert boxes to xyxy format
-    return boxes
 
 
 def preprocess(image_path, ort_model):
@@ -131,38 +82,6 @@ def postprocess(outs, conf_thres, im_shape):
     boxes = np.stack([x1, y1, x2, y2], axis=1)
 
     return boxes,scores
-def proportional_resize_with_padding(img,new_shape: Tuple[int, int])-> np.array:
-    try:
-        # 获取原始图片的宽高
-        original_height, original_width, _ = img.shape
-
-        # 计算宽高比例
-        width_ratio = new_shape[1] / original_width
-        height_ratio = new_shape[0] / original_height
-
-        # 选择缩放比例较小的那个，以保持原始图像的纵横比
-        resize_ratio = min(width_ratio, height_ratio)
-
-        # 计算缩放后的尺寸
-        new_width = int(original_width * resize_ratio)
-        new_height = int(original_height * resize_ratio)
-
-        # 进行缩放
-        resized_img = cv2.resize(img, (new_width, new_height), interpolation=cv2.INTER_AREA)
-
-        # 计算边框大小
-        top = (new_shape[0] - new_height) // 2
-        bottom = new_shape[0] - new_height - top
-        left = (new_shape[1] - new_width) // 2
-        right = new_shape[1] - new_width - left
-
-        # 添加边框
-        padded_img = cv2.copyMakeBorder(resized_img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=[255, 255, 255])
-
-        return padded_img,(top,bottom,left,right,new_width,new_height)
-    except Exception as e:
-        print(f"Error: {e}")
-        return None
 
 
 def xywh2xyxy_rescale(x,scale,is_scale):
@@ -179,32 +98,6 @@ def xywh2xyxy_rescale(x,scale,is_scale):
         y[..., 2] = (x[..., 0] + x[..., 2])
         y[..., 3] = (x[..., 1] + x[..., 3])
     return y
-
-def rscale_box_with_padding(original_size,boxes, target_size,border):
-    """
-    Resize a detection box from original size to target size with padding.
-
-    Parameters:
-        original_size (tuple): A tuple (width, height) representing the original image size.
-        original_box_xyxy (tuple): A tuple (x1, y1, x2, y2) representing the bounding box coordinates
-                                   in the original image before padding.
-        target_size (tuple): A tuple (width, height) representing the target image size after padding.
-
-    Returns:
-        tuple: A tuple (x1, y1, x2, y2) representing the bounding box coordinates in the target image.
-    """
-    original_width, original_height = original_size
-    target_width, target_height = target_size
-
-
-    # Calculate scaling factors in x and y directions
-    scale_x = target_width / original_width
-    scale_y = target_height / original_height
-
-    # Adjust the box coordinates to account for padding
-    boxes-= np.array([border[2],border[0],border[2],border[0]])
-    boxes *= np.array([scale_x,scale_y,scale_x,scale_y])
-    return boxes
 
 
 def cgr_detect_with_onnx(frame):
