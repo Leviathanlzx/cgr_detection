@@ -118,7 +118,6 @@ def detect_and_draw(pose_result, img,opt):
         #                 condition[3] = False
 
         ids[idd] = condition
-        # print(condition)
         # 画骨架
         if opt.skeleton:
             key_label(d.keypoints, img, img.shape, kpt_line=True)

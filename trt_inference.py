@@ -7,7 +7,6 @@ import tensorrt as trt
 import pycuda.driver as cuda
 import pycuda.autoinit
 from bytetrack_init import bytetrack, make_parser
-from yolov8onnx.utils import xywh2xyxy, nms
 from ultralytics.trackers import BYTETracker
 # from test import SR
 
