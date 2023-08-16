@@ -39,19 +39,6 @@ ids = {}
 
 
 def judge_smoke(pose_result, img, label):
-    """
-    判断是否出现吸烟行为。
-
-    参数:
-    pose_result (PoseResult): 姿态估计的结果，包含人体关键点信息。
-    img (Image): 输入图像，用于传递给 cgr_detect 函数进行烟雾检测。
-    cgr (CGR): cgr_detect 函数所需的其他参数。
-
-    返回值:
-    0: 未检测到吸烟行为。
-    1: 检测到疑似吸烟行为。
-    2: 检测到吸烟行为。
-    """
     k = pose_result.keypoints
     left_angle, right_angle = cal_angle(k)
     left_hand_index = 9
@@ -79,7 +66,7 @@ def detect_and_draw(pose_result, img,opt):
     for d in pose_result:
         conf, idd = float(d.conf), None if d.id is None else int(d.id)
         if idd not in ids.keys():
-            ids[idd] = np.array([idd, 0, 0, False])
+            ids[idd] = np.array([idd, 0])
         # name = ('' if id is None else f'id:{id} ')
         # label = (f'{name} {conf:.2f}' if conf else name)
         # if conf > 0.3:
@@ -94,9 +81,6 @@ def detect_and_draw(pose_result, img,opt):
                 condition[1] += 10
             if condition[1] < smoking_threshold:
                 box_label(d.xyxy, img, 3, "Suspicious", (28, 172, 255))
-
-            # if condition[2] > 0:
-            #     condition[2] -= 1
         elif status == 1:
             if condition[1] > 0:
                 condition[1] -= 1
