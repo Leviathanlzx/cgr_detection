@@ -12,7 +12,7 @@ class YOLOv8:
         self.conf_threshold = conf_thres
         self.iou_threshold = iou_thres
 
-        # Initialize model
+        # Initialize models
         self.initialize_model(path)
 
     def __call__(self, image):
@@ -22,7 +22,7 @@ class YOLOv8:
         self.session = onnxruntime.InferenceSession(path,
                                                     providers=['CUDAExecutionProvider',
                                                                'CPUExecutionProvider'])
-        # Get model info
+        # Get models info
         self.get_input_details()
         self.get_output_details()
 

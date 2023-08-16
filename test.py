@@ -2,7 +2,7 @@ import onnxruntime as rt
 import cv2
 import numpy as np
 
-sess=rt.InferenceSession("model/SR.onnx",providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
+sess=rt.InferenceSession("models/SR.onnx", providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
 input_name = sess.get_inputs()[0].name
 label_name = sess.get_outputs()[0].name
 

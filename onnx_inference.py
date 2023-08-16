@@ -151,10 +151,10 @@ def cgr_detect_with_onnx(image):
     start_time = time.time()
     # Create tensor from external memory
     input_tensor = ov.Tensor(array=img)
-    # Set input tensor for model with one input
+    # Set input tensor for models with one input
     infer_cgr.set_input_tensor(input_tensor)
     infer_cgr.infer()
-    # Get output tensor for model with one output
+    # Get output tensor for models with one output
     output = infer_cgr.get_output_tensor()
     output_buffer = output.data
     boxes, scores, class_ids = process_output(output_buffer, 0.25, 0.7, image, img,border)
@@ -221,7 +221,7 @@ def cgr_detect_alternative(frame):
 
     blob = cv2.dnn.blobFromImage(image, scalefactor=1 / 255, size=(640, 640), swapRB=True)
     infer_cgr.infer(blob)
-    # Get output tensor for model with one output
+    # Get output tensor for models with one output
     output = infer_cgr.get_output_tensor()
     outputs = output.data
 
@@ -265,12 +265,12 @@ def cgr_detect_alternative(frame):
 #     start_time = time.time()
 #     # Create tensor from external memory
 #     input_tensor = ov.Tensor(array=img)
-#     # Set input tensor for model with one input
+#     # Set input tensor for models with one input
 #     infer_request.set_input_tensor(input_tensor)
 #     infer_request.infer()
 #     # infer_request.start_async()
 #     # infer_request.wait()
-#     # Get output tensor for model with one output
+#     # Get output tensor for models with one output
 #     output = infer_request.get_output_tensor()
 #     output_buffer = output.data
 #     boxes, scores, class_ids=process_output(output_buffer,0.4,0.8,frame,img,border)

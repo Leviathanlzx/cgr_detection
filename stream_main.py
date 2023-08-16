@@ -2,14 +2,14 @@ import time
 from ultralytics import YOLO
 import cv2
 from utils import detect_and_draw,cgr_detect
-# Load a model
+# Load a models
 
 stream="rtmp://10.50.7.204:1935/live/stream"
 # cap= cv2.VideoCapture(0)
 # cap.set(3, 1920)
 # cap.set(4, 1080)
-cgr = YOLO("model/last.pt")
-model = YOLO('model/yolov8n-pose.pt')
+cgr = YOLO("models/last.pt")
+model = YOLO('models/yolov8n-pose.pt')
 cv2.namedWindow("Multi Person Pose Detection",cv2.WINDOW_NORMAL)
 cv2.resizeWindow("Multi Person Pose Detection", 1920,1080)
 results = model.track(source=0,tracker="botsort.yaml",stream=True,device="cpu")

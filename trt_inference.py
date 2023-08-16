@@ -9,7 +9,7 @@ import pycuda.autoinit
 from bytetrack_init import bytetrack, make_parser
 from yolov8onnx.utils import xywh2xyxy, nms
 from ultralytics.trackers import BYTETracker
-from test import SR
+# from test import SR
 
 f1 = open("model/yolov8x-pose.trt", "rb")
 f2 = open("model/detr.trt", "rb")
@@ -41,7 +41,7 @@ tracker_cgr = BYTETracker(args, frame_rate=30)
 def predict(stream, bindings, batch, context, d_input, d_output, output):  # result gets copied into output
     # transfer input data to device
     cuda.memcpy_htod_async(d_input, batch, stream)
-    # execute model
+    # execute models
     context.execute_async_v2(bindings, stream.handle, None)
     # transfer predictions back
     cuda.memcpy_dtoh_async(output, d_output, stream)

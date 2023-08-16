@@ -2,7 +2,7 @@ import time
 from ultralytics import YOLO,RTDETR
 import cv2
 from utils import detect_and_draw,cgr_detect
-# Load a model
+# Load a models
 
 
 model = RTDETR('model/rtdetr.pt')

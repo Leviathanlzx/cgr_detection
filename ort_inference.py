@@ -7,7 +7,7 @@ import onnxruntime as rt
 from bytetrack_init import bytetrack,make_parser
 from yolov8onnx.utils import xywh2xyxy, nms
 from ultralytics.trackers import BYTETracker
-from test import SR
+# from test import SR
 
 cgr_model=rt.InferenceSession("model/rtdetr-best.onnx")
 input_name = cgr_model.get_inputs()[0].name
