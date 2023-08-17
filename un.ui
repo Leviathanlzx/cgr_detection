@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout" rowstretch="3,1,1,2" columnstretch="1,5">
+   <layout class="QGridLayout" name="gridLayout" rowstretch="3,1,1,2,0" columnstretch="1,5">
     <property name="leftMargin">
      <number>20</number>
     </property>
@@ -113,6 +113,39 @@
       </item>
      </layout>
     </item>
+    <item row="2" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <property name="sizeConstraint">
+       <enum>QLayout::SetDefaultConstraint</enum>
+      </property>
+      <item>
+       <widget class="QCheckBox" name="cig">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>香烟框</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="skeleton">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>骨架</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
     <item row="0" column="0">
      <layout class="QVBoxLayout" name="verticalLayout">
       <property name="spacing">
@@ -173,60 +206,6 @@
         </property>
         <property name="text">
          <string>重放</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item row="1" column="0">
-     <layout class="QVBoxLayout" name="verticalLayout_2">
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <item>
-       <widget class="QLabel" name="process_time">
-        <property name="text">
-         <string>帧处理时间：0.0</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="fps">
-        <property name="text">
-         <string>FPS：0</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item row="2" column="0">
-     <layout class="QHBoxLayout" name="horizontalLayout_3">
-      <property name="sizeConstraint">
-       <enum>QLayout::SetDefaultConstraint</enum>
-      </property>
-      <item>
-       <widget class="QCheckBox" name="cig">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>香烟框</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="skeleton">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>骨架</string>
         </property>
        </widget>
       </item>
@@ -336,6 +315,34 @@
       </property>
       <property name="text">
        <string/>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="process_time">
+        <property name="text">
+         <string>帧处理时间：0.0</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="fps">
+        <property name="text">
+         <string>FPS：0</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="4" column="1">
+     <widget class="QSlider" name="position">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
       </property>
      </widget>
     </item>

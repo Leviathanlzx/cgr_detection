@@ -30,14 +30,9 @@ class SmokeDetectionApp(QMainWindow):
         parser.add_argument('--threshold', type=int,
                             default=50, help='连续检测阈值（不建议改动）')
         self.opt = parser.parse_args()
+        self.init_ui()
 
-
-        self.init_slots()
-
-        # Connect the button click event to a function
-        # self.detect_button.clicked.connect(self.detect_smoke)
-
-    def init_slots(self):
+    def init_ui(self):
 
         self.timer.timeout.connect(self.update_frame)
         self.loadvideo.clicked.connect(self.load_file)
@@ -64,6 +59,8 @@ class SmokeDetectionApp(QMainWindow):
         self.detect_label.setText(str(self.opt.threshold))
         self.detect_Slider.valueChanged.connect(self.valuechange)
 
+        self.position.sliderMoved.connect(self.set_position)
+
     def change(self):
         self.opt.skeleton=self.skeleton.isChecked()
         self.opt.cig_box= self.cig.isChecked()
@@ -80,6 +77,7 @@ class SmokeDetectionApp(QMainWindow):
         self.filepath=self.open_file_dialog()
         if self.filepath is not None:
             self.video_capture = cv2.VideoCapture(self.filepath)
+            self.position.setMaximum(int(self.video_capture.get(cv2.CAP_PROP_FRAME_COUNT)))
             self.choose_frame()
 
     def start(self):
@@ -93,6 +91,9 @@ class SmokeDetectionApp(QMainWindow):
         self.video_capture = cv2.VideoCapture(self.filepath)
         self.choose_frame()
         self.start()
+
+    def set_position(self,positions):
+        self.video_capture.set(cv2.CAP_PROP_POS_FRAMES, positions)
 
     def open_file_dialog(self):
         file_dialog = QFileDialog(self)
@@ -121,7 +122,7 @@ class SmokeDetectionApp(QMainWindow):
         pixmap = QPixmap.fromImage(q_image)
         self.label.setPixmap(pixmap)
         self.label.setScaledContents(True)
-
+        self.position.setValue(int(self.video_capture.get(cv2.CAP_PROP_POS_FRAMES)))
 
     def choose_frame(self):
         ret, frame = self.video_capture.read()
