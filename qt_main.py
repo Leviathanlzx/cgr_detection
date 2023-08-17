@@ -36,6 +36,7 @@ class SmokeDetectionApp(QMainWindow):
 
         self.timer.timeout.connect(self.update_frame)
         self.loadvideo.clicked.connect(self.load_file)
+        self.loadcam.clicked.connect(self.load_dir)
         self.start_process.clicked.connect(self.start)
         self.stop_process.clicked.connect(self.stop)
         self.replay.clicked.connect(self.replayer)
@@ -80,6 +81,19 @@ class SmokeDetectionApp(QMainWindow):
             self.position.setMaximum(int(self.video_capture.get(cv2.CAP_PROP_FRAME_COUNT)))
             self.choose_frame()
 
+    def load_dir(self):
+        self.timer.stop()
+        self.filepath=self.caminput.text()
+        if self.filepath is not None:
+            if self.filepath=="0":
+                self.video_capture = cv2.VideoCapture(0)
+                self.video_capture.set(3, 1920)
+                self.video_capture.set(4, 1080)
+            else:
+                self.video_capture = cv2.VideoCapture(self.filepath)
+            self.position.setMaximum(int(self.video_capture.get(cv2.CAP_PROP_FRAME_COUNT)))
+            self.choose_frame()
+
     def start(self):
         if self.filepath is not None:
             self.timer.start(33)
@@ -88,7 +102,12 @@ class SmokeDetectionApp(QMainWindow):
         self.timer.stop()
 
     def replayer(self):
-        self.video_capture = cv2.VideoCapture(self.filepath)
+        if self.filepath == "0":
+            self.video_capture = cv2.VideoCapture(0)
+            self.video_capture.set(3, 1920)
+            self.video_capture.set(4, 1080)
+        else:
+            self.video_capture = cv2.VideoCapture(self.filepath)
         self.choose_frame()
         self.start()
 
