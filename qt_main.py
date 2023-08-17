@@ -42,30 +42,30 @@ class SmokeDetectionApp(QMainWindow):
 
         self.skeleton.setChecked(self.opt.skeleton)
         self.cig.setChecked(self.opt.cig_box)
-        self.skeleton.stateChanged.connect(self.boxchange)
-        self.cig.stateChanged.connect(self.boxchange)
+        self.skeleton.stateChanged.connect(self.box_change)
+        self.cig.stateChanged.connect(self.box_change)
 
         self.cgr_Slider.setMinimum(25)
         self.cgr_Slider.setMaximum(100)
         self.cgr_Slider.setSingleStep(1)
         self.cgr_Slider.setValue(int(self.opt.cgr_conf*100))
         self.cgr_label.setText(str(self.opt.cgr_conf))
-        self.cgr_Slider.valueChanged.connect(self.valuechange)
+        self.cgr_Slider.valueChanged.connect(self.value_change)
 
         self.detect_Slider.setMinimum(0)
         self.detect_Slider.setMaximum(100)
         self.detect_Slider.setSingleStep(1)
         self.detect_Slider.setValue(self.opt.threshold)
         self.detect_label.setText(str(self.opt.threshold))
-        self.detect_Slider.valueChanged.connect(self.valuechange)
+        self.detect_Slider.valueChanged.connect(self.value_change)
 
         self.position.sliderMoved.connect(self.set_position)
 
-    def boxchange(self):
+    def box_change(self):
         self.opt.skeleton=self.skeleton.isChecked()
         self.opt.cig_box= self.cig.isChecked()
 
-    def valuechange(self):
+    def value_change(self):
         self.opt.cgr_conf=self.cgr_Slider.value()/100
         self.opt.threshold=self.detect_Slider.value()
         self.cgr_label.setText(str(self.cgr_Slider.value()/100))
