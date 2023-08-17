@@ -42,8 +42,8 @@ class SmokeDetectionApp(QMainWindow):
 
         self.skeleton.setChecked(self.opt.skeleton)
         self.cig.setChecked(self.opt.cig_box)
-        self.skeleton.stateChanged.connect(self.change)
-        self.cig.stateChanged.connect(self.change)
+        self.skeleton.stateChanged.connect(self.boxchange)
+        self.cig.stateChanged.connect(self.boxchange)
 
         self.cgr_Slider.setMinimum(25)
         self.cgr_Slider.setMaximum(100)
@@ -61,7 +61,7 @@ class SmokeDetectionApp(QMainWindow):
 
         self.position.sliderMoved.connect(self.set_position)
 
-    def change(self):
+    def boxchange(self):
         self.opt.skeleton=self.skeleton.isChecked()
         self.opt.cig_box= self.cig.isChecked()
 
