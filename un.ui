@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>吸烟检测</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout" rowstretch="3,1,1,2,0" columnstretch="1,5">
@@ -155,7 +155,17 @@
        <enum>QLayout::SetDefaultConstraint</enum>
       </property>
       <item>
-       <widget class="QLineEdit" name="caminput"/>
+       <widget class="QLineEdit" name="caminput">
+        <property name="inputMask">
+         <string/>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="placeholderText">
+         <string>文件地址、RTSP或相机0</string>
+        </property>
+       </widget>
       </item>
       <item>
        <widget class="QPushButton" name="loadcam">
@@ -361,6 +371,24 @@
        <enum>Qt::Horizontal</enum>
       </property>
      </widget>
+    </item>
+    <item row="4" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <widget class="QCheckBox" name="savevideo">
+        <property name="text">
+         <string>保存</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="saveinfo">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>

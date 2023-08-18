@@ -11,7 +11,7 @@ from ultralytics.trackers import BYTETracker
 
 core1 = ov.Core()
 core2 = ov.Core()
-cgr_model = core1.compile_model("model/last.onnx", "AUTO")
+cgr_model = core1.compile_model("model/yolov8n-cig.onnx", "AUTO")
 pose_model = core2.compile_model("model/yolov8n-pose.onnx","AUTO")
 output_node = pose_model.outputs[0]
 infer_cgr = cgr_model.create_infer_request()

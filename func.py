@@ -28,13 +28,18 @@ class Colors:
         return tuple(int(h[1 + i:1 + i + 2], 16) for i in (0, 2, 4))
 
 
+# 绘制函数颜色库
 colors = Colors()
 kpt_color = colors.pose_palette[[16, 16, 16, 16, 16, 0, 0, 0, 0, 0, 0, 9, 9, 9, 9, 9, 9]]
 limb_color = colors.pose_palette[[9, 9, 9, 9, 7, 7, 7, 0, 0, 0, 0, 0, 16, 16, 16, 16, 16, 16, 16]]
 skeleton = [[16, 14], [14, 12], [17, 15], [15, 13], [12, 13], [6, 12], [7, 13], [6, 7], [6, 8], [7, 9],
             [8, 10], [9, 11], [2, 3], [1, 2], [1, 3], [2, 4], [3, 5], [4, 6], [5, 7]]
+
+# 保存间隔
 count = [0]
-cgr_conf=[0.4]# 吸烟检测阈值，连续检测到吸烟的次数
+# 吸烟置信度
+cgr_conf=[0.4]
+# 人员信息列表，包括每个人的id与吸烟检测累计值，累计超过吸烟设定阈值就会被认为在吸烟
 ids = {}
 
 
@@ -43,8 +48,10 @@ def judge_smoke(pose_result, img, label):
     left_angle, right_angle = cal_angle(k)
     left_hand_index = 9
     right_hand_index = 10
+    # 如果角度小于55度或受手嘴距离小于0.8
     if int(left_angle) < 55 or cal_dis(k, left_hand_index) < 0.8:
         if cgr_detect(pose_result, img, left_hand_index, label):
+            # 检测到香烟
             return 2
         else:
             return 1
@@ -64,18 +71,20 @@ def detect_and_draw(pose_result, img,opt):
     cgrlabel = []
     # 画人物框
     for d in pose_result:
+        # 每个人员的id与置信度
         conf, idd = float(d.conf), None if d.id is None else int(d.id)
         if idd not in ids.keys():
+            # 加入人员追踪列表，idd为id，0为初始累计值
             ids[idd] = np.array([idd, 0])
         # name = ('' if id is None else f'id:{id} ')
         # label = (f'{name} {conf:.2f}' if conf else name)
         # if conf > 0.3:
         #     box_label(d.xyxy, img, lw, label)
 
-        # 时长判断
+        # 判断吸烟状态
         condition = ids[idd]
         status = judge_smoke(d, img, cgrlabel)
-
+        # 吸烟状态阈值加10，不吸烟时每帧减少1，缓慢下降
         if status == 2:
             if condition[1] < 100:
                 condition[1] += 10
@@ -89,34 +98,28 @@ def detect_and_draw(pose_result, img,opt):
             if condition[1] > 0:
                 condition[1] -= 1
 
+        # 若超过设定阈值就显示
         if condition[1] > smoking_threshold:
             box_label(d.xyxy, img, 3, "Target is Smoking", (0, 0, 255))
-        # 根据吸烟检测阈值和非吸烟检测阈值进行判断
-        #             if condition[1] >= smoking_threshold:
-        #                 condition[3] = True
-        #                 condition[2] = 0
-        #                 # print(f"{id} 吸烟")
-
-        #             elif condition[2] >= no_smoking_threshold:
-        #                 condition[1]=0
-        #                 condition[3] = False
-
+        # 更新人员信息列表
         ids[idd] = condition
         # 画骨架
         if opt.skeleton:
             key_label(d.keypoints, img, img.shape, kpt_line=True)
-        # print(f"{id} 没有吸烟")
+
     cgr_box = np.array([t[:4] for t in cgrlabel])
     # cgr_score = np.array([t[4] for t in cgrlabel])
     # cgr_box,cgr_score=cgr_update(cgr_box,cgr_score)
+    # 画香烟
     if opt.cig_box:
         for i in cgr_box:
-            cgr_label(i, img)
+            box_label(i, img,3,label='Cig', color=(0, 0, 255), txt_color=(255, 255, 255))
 
     return img
 
 
 def cal_dis(kpt, direction):
+    # 计算手嘴距离，以上身长度为参照
     nose, wrist, shoulder, hip = kpt[0], kpt[direction], kpt[5], kpt[11]
     difference = nose - wrist
     standard = shoulder - hip
@@ -127,6 +130,7 @@ def cal_dis(kpt, direction):
 
 
 def cal_angle(kpt):
+    # 计算关节夹角，以向量夹角方式计算
     lshoulder, lelbow, lwrist = kpt[5], kpt[7], kpt[9]
     rshoulder, relbow, rwrist = kpt[6], kpt[8], kpt[10]
     left_shoulder_vector = lshoulder - lelbow
@@ -149,6 +153,7 @@ def cal_angle(kpt):
 
 
 def box_label(box, im, lw, label='', color=(255, 255, 64), txt_color=(255, 255, 255)):
+    # 画出检测框，box为xyxy格式，来源于ultralytics官方
     """Add one xyxy box to image with label."""
     p1, p2 = (int(box[0]), int(box[1])), (int(box[2]), int(box[3]))
     cv2.rectangle(im, p1, p2, color, thickness=lw, lineType=cv2.LINE_AA)
@@ -171,7 +176,7 @@ def cgr_detect(k, img, direction, label):
     count[0] += 1
     box = k.xyxy
     right = k.keypoints[0]
-    # print("there")
+    # 锁定嘴部位置
     length = int(0.4 * (box[2] - box[0]))
     lengths = int(0.3 * (box[3] - box[1]))
     box = box.astype(np.int32)
@@ -179,74 +184,30 @@ def cgr_detect(k, img, direction, label):
     box[3] = np.min([int(right[1]) + length, img.shape[0]])
     box[0] = np.max([int(right[0]) - lengths, 0])
     box[2] = np.min([int(right[0]) + lengths, img.shape[1]])
+    # 挖出嘴部图片
     person = img[box[1]:box[3], box[0]:box[2]]
-    # cv2.imshow("hands",person)
-    # cv2.waitKey(5)
-    if count[0] % 5 == 0:
-        cv2.imwrite(f"video/{k.id}.jpg", person)
+    # if count[0] % 5 == 0:
+    #     cv2.imwrite(f"video/{k.id}.jpg", person)
 
     if person.shape[0] != 0 and person.shape[1] != 0:
+        # 对挖出图片进行香烟目标检测
         boxes, scores = cgr_detect_with_onnx(person)
         # boxes, scores = cgr_detect_alternative(person)
         for i, c in enumerate(scores):
+            # 若存在，则添加至香烟队列（用于画图）
             if c > cgr_conf[0]:
                 label.append([int(boxes[i][0]) + int(box[0]), int(boxes[i][1]) + int(box[1]),
                               int(boxes[i][2]) + int(box[0]), int(boxes[i][3]) + int(box[1]), c])
-                # cgr_label(boxes[i], box, img)
-                # if count[0] % 10 == 0:
-                #     bo = k.xyxy
-                #     t = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
-                #     cv2.imwrite(f"test/{t}.jpg",img[int(bo[1]):int(bo[3]), int(bo[0]):int(bo[2])])
-                # print("finish!")
                 return True
             else:
                 return False
-    # cgr_results = cgr.predict(person, imgsz=640)
-    # for i, c in enumerate(cgr_results[0].boxes):
-    #     conf = float(c.conf)
-    #     if conf > 0.4:
-    #         t = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
-    #         # cgr_label(c.xyxy.squeeze(), box, img)
-    #         if count[0]%10==0:
-    #             bo = k.boxes.xyxy.squeeze().tolist()
-    #             cv2.imwrite(f"test/{t}.jpg",img[int(bo[1]):int(bo[3]), int(bo[0]):int(bo[2])])
-    #             print("finish!")
-    #         return True
-
-    # except:
-    #     person = img[int(box[1]):int(box[3]), int(box[0]):int(box[2])]
-
-
-def cgr_label(box, im, label='Cig', color=(0, 0, 255), txt_color=(255, 255, 255)):
-    """Add one xyxy box to image with label."""
-    # lw = max(round(sum(im.shape) / 2 * 0.003), 2)
-    lw = 3
-    # if isinstance(box, torch.Tensor):
-    #     box = box.tolist()
-    # p1, p2 = (int(box[0]) + int(ori[0]), int(box[1]) + int(ori[1])), (
-    # int(box[2]) + int(ori[0]), int(box[3]) + int(ori[1]))
-    p1, p2 = (int(box[0]), int(box[1])), (int(box[2]), int(box[3]))
-    cv2.rectangle(im, p1, p2, color, thickness=lw, lineType=cv2.LINE_AA)
-    if label:
-        tf = max(lw - 1, 1)  # font thickness
-        w, h = cv2.getTextSize(label, 0, fontScale=lw / 3, thickness=tf)[0]  # text width, height
-        outside = p1[1] - h >= 3
-        p2 = p1[0] + w, p1[1] - h - 3 if outside else p1[1] + h + 3
-        cv2.rectangle(im, p1, p2, color, -1, cv2.LINE_AA)  # filled
-        cv2.putText(im,
-                    label, (p1[0], p1[1] - 2 if outside else p1[1] + h + 2),
-                    0,
-                    lw / 3,
-                    txt_color,
-                    thickness=tf,
-                    lineType=cv2.LINE_AA)
 
 
 def key_label(kpts, im, shape=(640, 640), radius=5, kpt_line=True):
-    """Plot keypoints on the image.
-
+    # 骨架绘图函数，来源于ultralytics库
+    """
     Args:
-        kpts (tensor): Predicted keypoints with shape [17, 3]. Each keypoint has (x, y, confidence).
+        kpts (ndarray): Predicted keypoints with shape [17, 3]. Each keypoint has (x, y, confidence).
         shape (tuple): Image shape as a tuple (h, w), where h is the height and w is the width.
         radius (int, optional): Radius of the drawn keypoints. Default is 5.
         kpt_line (bool, optional): If True, the function will draw lines connecting keypoints

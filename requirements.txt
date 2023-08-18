@@ -1,6 +1,6 @@
 opencv-python~=4.8.0.74
 numpy~=1.23.5
-onnxruntime~=1.15.1
+onnxruntime-gpu~=1.15.1
 ultralytics~=8.0.145
 pyqt5~=5.15.9
 openvino~=2023.0.1

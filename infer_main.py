@@ -13,20 +13,23 @@ class Result:
 
 
 def mp4save():
-    frame_width = 1920  # Width of the frames in the output video
-    frame_height = 1080  # Height of the frames in the output video
-    fps = 30  # Frames per second
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Codec for MP4 format
-    out = cv2.VideoWriter("video/out3.mp4", fourcc, fps, (frame_width, frame_height))
+    frame_width = 1920  # 输出视频宽度
+    frame_height = 1080  # 输出视频高度
+    fps = 30  # 帧率
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # 视频编码格式
+    out = cv2.VideoWriter("video/output.mp4", fourcc, fps, (frame_width, frame_height))
     return out
 
 
 def cgr_detect(image,opt):
     start_time = time.time()
+    # 推理人体姿态
     box, score, ids, kpts = pose_estimate_with_onnx(image)
     if ids and box is not None:
         pose_result = [Result(i, j, k, m) for i, j, k, m in zip(box, score, ids, kpts)]
+        # 检测吸烟
         image = detect_and_draw(pose_result, image,opt)
+
     current_time = time.time()
     elapsed_time = current_time - start_time
     # 计算实时帧率
@@ -50,8 +53,7 @@ if __name__ == '__main__':
         ret,image=cap.read()
         if not ret:
             break
-        # i = i + 1
-        # if (i%count==0):
+
         box, score, ids, kpts=pose_estimate_with_onnx(image)
         if ids and box is not None:
             pose_result=[Result(i,j,k,m) for i,j,k,m in zip(box, score, ids, kpts)]

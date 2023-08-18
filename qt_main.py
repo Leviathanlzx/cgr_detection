@@ -8,6 +8,7 @@ from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.uic import loadUi
 from PyQt5 import QtCore
 
+import infer_main
 from infer_main import cgr_detect
 
 
@@ -20,6 +21,7 @@ class SmokeDetectionApp(QMainWindow):
         self.filepath=None
         self.video_capture=None
         self.label.setScaledContents(True)
+        self.save = False
         parser = argparse.ArgumentParser()
         parser.add_argument('--cgr_conf', type=float,
                             default=0.4, help='香烟检测阈值')
@@ -30,6 +32,7 @@ class SmokeDetectionApp(QMainWindow):
         parser.add_argument('--threshold', type=int,
                             default=50, help='连续检测阈值（不建议改动）')
         self.opt = parser.parse_args()
+        self.out=None
         self.init_ui()
 
     def init_ui(self):
@@ -62,6 +65,9 @@ class SmokeDetectionApp(QMainWindow):
 
         self.position.sliderMoved.connect(self.set_position)
 
+        self.savevideo.setChecked(self.save)
+        self.savevideo.stateChanged.connect(self.save_change)
+
     def box_change(self):
         self.opt.skeleton=self.skeleton.isChecked()
         self.opt.cig_box= self.cig.isChecked()
@@ -72,6 +78,11 @@ class SmokeDetectionApp(QMainWindow):
         self.cgr_label.setText(str(self.cgr_Slider.value()/100))
         self.detect_label.setText(str(self.detect_Slider.value()))
 
+    def save_change(self):
+        self.save=self.savevideo.isChecked()
+        if self.save:
+            self.out=infer_main.mp4save()
+            print("setup save")
 
     def load_file(self):
         self.timer.stop()
@@ -130,8 +141,13 @@ class SmokeDetectionApp(QMainWindow):
         if not ret:
             self.timer.stop()
             self.video_capture.release()
+            if self.save:
+                self.out.release()
+                self.saveinfo.setText("保存在video/output.mp4")
             return
         frame,fps,tim=cgr_detect(frame,self.opt)
+        if self.save:
+            self.out.write(frame)
         self.fps.setText(f"FPS：{round(fps,1)}")
         self.process_time.setText(f"帧处理时间：{round(tim,3)} s")
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
