@@ -8,8 +8,7 @@ from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.uic import loadUi
 from PyQt5 import QtCore
 
-import infer_main
-from infer_main import cgr_detect
+from infer_main import cgr_detect,mp4save
 
 
 class SmokeDetectionApp(QMainWindow):
@@ -81,8 +80,8 @@ class SmokeDetectionApp(QMainWindow):
     def save_change(self):
         self.save=self.savevideo.isChecked()
         if self.save:
-            self.out=infer_main.mp4save()
-            print("setup save")
+            self.out=mp4save()
+            print("setup save option")
 
     def load_file(self):
         self.timer.stop()
