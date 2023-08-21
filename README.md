@@ -11,26 +11,26 @@ RTDETR+BYTETRACK+YOLOv8吸烟检测+Openvino/Onnxruntime/TensorRT部署
 >通过使用相同的数据集分别在YOLOv8n、YOLOv8s、YOLOv8m以及RTDETR-l上训练，发现RTDETR在模型性能上完全超越了YOLO系列，达到了0.95099 precision、0.92931	recall、0.9612 mAP50、0.61979 mAP50-95。因此，本次选用RTDETR作为香烟检测模型
 
 ### 代码说明
-│  bytetrack_init.py  
-│  byte_tracker.py
-│  export.py
-│  func.py
-│  infer_main.py
-│  LICENSE
-│  ort_inference.py
-│  ov_inference.py
-│  pose_onnx.py
-│  qt_main.py
-│  README.md
-│  requirements.txt
-│  smoke_detect.py
-│  streamlit_main.py
-│  stream_main.py
-│  test.py
-│  train.py
-│  trt_inference_detr.py
-│  trt_inference_yolo.py
-│  un.ui
-│  utils.py
-│  yolov8.py
+    │  bytetrack_init.py  
+    │  byte_tracker.py
+    │  export.py
+    │  func.py
+    │  infer_main.py
+    │  LICENSE
+    │  ort_inference.py
+    │  ov_inference.py
+    │  pose_onnx.py
+    │  qt_main.py
+    │  README.md
+    │  requirements.txt
+    │  smoke_detect.py
+    │  streamlit_main.py
+    │  stream_main.py
+    │  test.py
+    │  train.py
+    │  trt_inference_detr.py
+    │  trt_inference_yolo.py
+    │  un.ui
+    │  utils.py
+    │  yolov8.py
 
