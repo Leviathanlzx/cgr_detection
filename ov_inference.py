@@ -7,7 +7,7 @@ import openvino.runtime as ov
 
 from bytetrack_init import bytetrack,make_parser
 from yolov8onnx.utils import xywh2xyxy, nms
-from ultralytics.trackers import BYTETracker
+from trackers.byte_tracker import BYTETracker
 
 core1 = ov.Core()
 core2 = ov.Core()

@@ -1,7 +1,9 @@
+import argparse
+
 import cv2
 import time
 from ov_inference import pose_estimate_with_onnx
-from func import initial_cgr, detect_and_draw
+from func import detect_and_draw
 
 
 class Result:
@@ -19,14 +21,6 @@ def mp4save():
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # 视频编码格式
     out = cv2.VideoWriter("video/output.mp4", fourcc, fps, (frame_width, frame_height))
     return out
-
-
-def initialization(model):
-    try:
-        initial_cgr(model)
-        return True
-    except:
-        return False
 
 
 def cgr_detect(image,opt):
@@ -49,7 +43,16 @@ def cgr_detect(image,opt):
 
 if __name__ == '__main__':
     # 初始化模型，2为测试，请使用0（tensorRT的detr）或1（tensorRT的yolo）
-    initialization(2)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--cgr_conf', type=float,
+                        default=0.4, help='香烟检测阈值')
+    parser.add_argument('--skeleton', type=bool,
+                        default=False, help='是否画出骨架')
+    parser.add_argument('--cig_box', type=bool,
+                        default=False, help='是否画出香烟框')
+    parser.add_argument('--threshold', type=int,
+                        default=50, help='连续检测阈值（不建议改动）')
+    opt = parser.parse_args()
     stream = "rtmp://10.50.7.204:1935/live/stream"
     cap = cv2.VideoCapture("video/test3.mp4")
     # cap.set(3, 3840)
@@ -67,7 +70,7 @@ if __name__ == '__main__':
         box, score, ids, kpts=pose_estimate_with_onnx(image)
         if ids and box is not None:
             pose_result=[Result(i,j,k,m) for i,j,k,m in zip(box, score, ids, kpts)]
-            image = detect_and_draw(pose_result, image)
+            image = detect_and_draw(pose_result, image,opt)
 
         current_time = time.time()
         elapsed_time = current_time - start_time

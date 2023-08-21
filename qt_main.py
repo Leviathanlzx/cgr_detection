@@ -7,8 +7,7 @@ from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.uic import loadUi
 from PyQt5 import QtCore
-
-from infer_main import cgr_detect,mp4save,initialization
+from infer_main import cgr_detect,mp4save
 
 
 class SmokeDetectionApp(QMainWindow):
@@ -32,12 +31,10 @@ class SmokeDetectionApp(QMainWindow):
                             default=50, help='连续检测阈值（不建议改动）')
         self.opt = parser.parse_args()
         self.out=None
-        self.init_ui()
+        self.model=None
+
 
     def init_ui(self):
-
-        self.initial.clicked.connect(self.model_init)
-
         self.timer.timeout.connect(self.update_frame)
         self.loadvideo.clicked.connect(self.load_file)
         self.loadcam.clicked.connect(self.load_dir)
@@ -70,7 +67,6 @@ class SmokeDetectionApp(QMainWindow):
         self.savevideo.stateChanged.connect(self.save_change)
 
     def model_init(self):
-        initialization(self.comboBox.currentIndex())
         self.caminput.setPlaceholderText("文件地址、RTSP或相机0")
 
     def box_change(self):

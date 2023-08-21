@@ -30,11 +30,11 @@ d_input2 = cuda.mem_alloc(1 * img.nbytes)
 d_output2 = cuda.mem_alloc(1 * output2.nbytes)
 
 bindings2 = [int(d_input2), int(d_output2)]
+
 stream = cuda.Stream()
 
 args = make_parser().parse_args()
 tracker = BYTETracker(args, frame_rate=30)
-tracker_cgr = BYTETracker(args, frame_rate=30)
 
 
 def predict(stream, bindings, batch, context, d_input, d_output, output):  # result gets copied into output
