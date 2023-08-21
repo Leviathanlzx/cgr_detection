@@ -35,4 +35,5 @@ RTDETR+BYTETRACK+YOLOv8吸烟检测+Openvino/Onnxruntime/TensorRT部署
     │      yolov8n-pose.onnx    yolov8-pose的onnx模型
     
 >更换推理框架：请修改func.py与infer_main.py中导入函数pose_estimate_with_onnx与cgr_detect_with_onnx的导入方式，可以选择ort_inference.py/ov_inference.py/trt_inference.py来导入上述函数，从而使用不同推理框架
+
 >请用项目内文件替换ultralytics库内trackers/byte_tracker.py以使用bytetrack追踪
