@@ -10,7 +10,7 @@ from bytetrack_init import bytetrack, make_parser
 from ultralytics.trackers import BYTETracker
 # from test import SR
 
-f1 = open("model/yolov8x-pose.trt", "rb")
+f1 = open("model/yolov8m-pose.trt", "rb")
 f2 = open("model/detr.trt", "rb")
 runtime = trt.Runtime(trt.Logger(trt.Logger.WARNING))
 engine1 = runtime.deserialize_cuda_engine(f1.read())

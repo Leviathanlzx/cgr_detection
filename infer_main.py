@@ -1,7 +1,7 @@
 import cv2
 import time
 from ov_inference import pose_estimate_with_onnx
-from func import detect_and_draw
+from func import initial_cgr, detect_and_draw
 
 
 class Result:
@@ -19,6 +19,14 @@ def mp4save():
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # 视频编码格式
     out = cv2.VideoWriter("video/output.mp4", fourcc, fps, (frame_width, frame_height))
     return out
+
+
+def initialization(model):
+    try:
+        initial_cgr(model)
+        return True
+    except:
+        return False
 
 
 def cgr_detect(image,opt):
@@ -40,6 +48,8 @@ def cgr_detect(image,opt):
 
 
 if __name__ == '__main__':
+    # 初始化模型，2为测试，请使用0（tensorRT的detr）或1（tensorRT的yolo）
+    initialization(2)
     stream = "rtmp://10.50.7.204:1935/live/stream"
     cap = cv2.VideoCapture("video/test3.mp4")
     # cap.set(3, 3840)

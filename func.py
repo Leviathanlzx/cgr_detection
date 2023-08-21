@@ -1,8 +1,15 @@
 from datetime import datetime
 import cv2
 import numpy as np
-import torch
-from ov_inference import cgr_detect_with_onnx
+
+
+def initial_cgr(model=2):
+    if model==0:
+        from trt_inference_yolo import cgr_detect_with_onnx
+    if model==1:
+        from trt_inference_detr import cgr_detect_with_onnx
+    if model==2:
+        from ov_inference import cgr_detect_with_onnx
 
 
 class Colors:
