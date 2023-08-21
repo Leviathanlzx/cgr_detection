@@ -11,26 +11,18 @@ RTDETR+BYTETRACK+YOLOv8吸烟检测+Openvino/Onnxruntime/TensorRT部署
 >通过使用相同的数据集分别在YOLOv8n、YOLOv8s、YOLOv8m以及RTDETR-l上训练，发现RTDETR在模型性能上完全超越了YOLO系列，达到了0.95099 precision、0.92931	recall、0.9612 mAP50、0.61979 mAP50-95。因此，本次选用RTDETR作为香烟检测模型
 
 ### 代码说明
-    │  bytetrack_init.py  
-    │  byte_tracker.py
-    │  export.py
-    │  func.py
-    │  infer_main.py
+    │  bytetrack_init.py  bytrack初始化与参数调整
+    │  byte_tracker.py    请将该文件放入ultralytics库下的trackers/
+    │  export.py          导出onnx模型
+    │  func.py            程序逻辑处理函数，如吸烟判断函数
+    │  infer_main.py      主程序，启动推理
     │  LICENSE
-    │  ort_inference.py
-    │  ov_inference.py
-    │  pose_onnx.py
-    │  qt_main.py
-    │  README.md
-    │  requirements.txt
-    │  smoke_detect.py
-    │  streamlit_main.py
-    │  stream_main.py
-    │  test.py
-    │  train.py
-    │  trt_inference_detr.py
-    │  trt_inference_yolo.py
-    │  un.ui
-    │  utils.py
-    │  yolov8.py
-
+    │  ort_inference.py   onnxruntime推理
+    │  ov_inference.py    openvino推理    
+    │  qt_main.py         GUI窗口启动
+    │  requirements.txt   项目环境需求
+    │  trt_inference_detr.py  detr-tensorrt推理
+    │  trt_inference_yolo.py  yolo-tensorrt推理
+    │  un.ui              qt的ui界面文件
+    
+>更换推理框架：请修改func.py与infer_main.py中导入函数pose_estimate_with_onnx与cgr_detect_with_onnx的导入方式，可以选择ort_inference.py/ov_inference.py/trt_inference.py来导入上述函数，从而使用不同推理框架
