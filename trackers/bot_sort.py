@@ -132,7 +132,6 @@ class BOTSORT(BYTETracker):
         dists = matching.iou_distance(tracks, detections)
         dists_mask = (dists > self.proximity_thresh)
 
-        # TODO: mot20
         # if not self.args.mot20:
         dists = matching.fuse_score(dists, detections)
 

@@ -90,7 +90,7 @@ class GMC:
         frame = cv2.cvtColor(raw_frame, cv2.COLOR_BGR2GRAY)
         H = np.eye(2, 3, dtype=np.float32)
 
-        # Downscale image (TODO: consider using pyramids)
+        # Downscale image
         if self.downscale > 1.0:
             frame = cv2.GaussianBlur(frame, (3, 3), 1.5)
             frame = cv2.resize(frame, (width // self.downscale, height // self.downscale))
@@ -122,7 +122,7 @@ class GMC:
         frame = cv2.cvtColor(raw_frame, cv2.COLOR_BGR2GRAY)
         H = np.eye(2, 3)
 
-        # Downscale image (TODO: consider using pyramids)
+        # Downscale image
         if self.downscale > 1.0:
             # frame = cv2.GaussianBlur(frame, (3, 3), 1.5)
             frame = cv2.resize(frame, (width // self.downscale, height // self.downscale))
