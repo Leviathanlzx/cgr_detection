@@ -12,5 +12,26 @@ RTDETR+BYTETRACK+YOLOv8吸烟检测+Openvino/Onnxruntime/TensorRT部署
 
 ### 代码说明
 
->
+>│  bytetrack_init.py  
+│  byte_tracker.py
+│  export.py
+│  func.py
+│  infer_main.py
+│  LICENSE
+│  ort_inference.py
+│  ov_inference.py
+│  pose_onnx.py
+│  qt_main.py
+│  README.md
+│  requirements.txt
+│  smoke_detect.py
+│  streamlit_main.py
+│  stream_main.py
+│  test.py
+│  train.py
+│  trt_inference_detr.py
+│  trt_inference_yolo.py
+│  un.ui
+│  utils.py
+│  yolov8.py
 
