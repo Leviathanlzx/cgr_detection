@@ -11,7 +11,7 @@ RTDETR+BYTETRACK+YOLOv8吸烟检测+Openvino/Onnxruntime/TensorRT部署
 >
 >通过使用相同的数据集分别在YOLOv8n、YOLOv8s、YOLOv8m以及RTDETR-l上训练，发现RTDETR在模型性能上完全超越了YOLO系列，达到了0.95099 precision、0.92931	recall、0.9612 mAP50、0.61979 mAP50-95。因此，选用RTDETR作为香烟检测模型
 
-### 代码说明
+### 项目说明
     │  bytetrack_init.py                  bytrack初始化与参数设定
     │  byte_tracker.py                    替换ultralytics库下的trackers/byte_tracker.py
     │  export.py                          从pt模型导出onnx模型
@@ -36,3 +36,6 @@ RTDETR+BYTETRACK+YOLOv8吸烟检测+Openvino/Onnxruntime/TensorRT部署
 >更换推理框架：请修改func.py与infer_main.py中导入函数pose_estimate_with_onnx与cgr_detect_with_onnx的导入方式，可以选择ort_inference.py/ov_inference.py/trt_inference.py来导入上述函数，从而使用不同推理框架
 
 >文件替换：请用项目内文件替换ultralytics库内trackers/byte_tracker.py来使用bytetrack追踪
+
+## 使用说明
+
