@@ -40,7 +40,9 @@ YOLOv8-Pose+BYTETRACK+RTDETR吸烟检测+Openvino/Onnxruntime/TensorRT部署
 ## 使用说明
 
 运行以下代码启动GUI窗口：
+
     qt_main.py
+
 或运行infer_main直接进行推理
 本程序默认为使用trt推理，由于rtdetr对于trt优化有着较大依赖（cpu推理约2000ms，gpu-ort推理约100ms，而trt推理可以加速到7ms）
 打开GUI后，首先选择使用模型进行初始化，之后即可正常操作
