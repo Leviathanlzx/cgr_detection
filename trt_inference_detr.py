@@ -123,7 +123,6 @@ def cgr_detect_with_onnx(frame):
     elapsed_time = current_time - start_time
     # print("done!", elapsed_time)
     # outputs = np.transpose(outputs[0],[0,2,1])
-    length /= 3
     boxes, scores = postprocess(outputs.squeeze(), 0.25, (length, length))
     # boxes, result = bytetrack(boxes, scores,class_ids, tracker_cgr)
     if isinstance(boxes, numpy.ndarray) and boxes.shape[0] != 0:

@@ -1,6 +1,10 @@
 opencv-python~=4.8.0.74
-numpy~=1.23.5
+numpy~=1.25.1
 onnxruntime-gpu~=1.15.1
-ultralytics~=8.0.145
+ultralytics==8.0.145
 pyqt5~=5.15.9
 openvino~=2023.0.1
+torch==2.0.0+cu118
+pandas~=2.0.3
+tensorrt==8.6.1
+pycuda~=2022.2.2

@@ -4,6 +4,7 @@ import numpy as np
 
 
 def initial_cgr(model=2):
+    # 对trt推理初始化，使用其他框架请直接from ov/ort_inference import cgr_detect_with_onnx
     if model==0:
         from trt_inference_yolo import cgr_detect_with_onnx
     if model==1:
