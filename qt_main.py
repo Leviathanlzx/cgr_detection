@@ -8,7 +8,7 @@ from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.uic import loadUi
 from PyQt5 import QtCore
 from infer_main import cgr_detect,mp4save
-
+from func import init_model
 
 class SmokeDetectionApp(QMainWindow):
     def __init__(self):
@@ -32,6 +32,8 @@ class SmokeDetectionApp(QMainWindow):
         self.opt = parser.parse_args()
         self.out=None
         self.model=None
+        self.initial.clicked.connect(self.model_init)
+        self.init_ui()
 
 
     def init_ui(self):
@@ -67,6 +69,7 @@ class SmokeDetectionApp(QMainWindow):
         self.savevideo.stateChanged.connect(self.save_change)
 
     def model_init(self):
+        init_model(self.comboBox.currentIndex())
         self.caminput.setPlaceholderText("文件地址、RTSP或相机0")
 
     def box_change(self):

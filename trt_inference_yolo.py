@@ -7,22 +7,16 @@ import tensorrt as trt
 import pycuda.driver as cuda
 import pycuda.autoinit
 from bytetrack_init import bytetrack, make_parser
-from ultralytics.trackers import BYTETracker
+from trackers import BYTETracker
 
-f1 = open("model/yolov8m-pose.trt", "rb")
+
 f2 = open("model/last.trt", "rb")
 runtime = trt.Runtime(trt.Logger(trt.Logger.WARNING))
-engine1 = runtime.deserialize_cuda_engine(f1.read())
-context1 = engine1.create_execution_context()
+
 engine2 = runtime.deserialize_cuda_engine(f2.read())
 context2 = engine2.create_execution_context()
 
 img = np.zeros([1, 3, 640, 640])
-output1 = np.empty([1, 56, 8400], dtype=np.float32)
-d_input1 = cuda.mem_alloc(1 * img.nbytes)
-d_output1 = cuda.mem_alloc(1 * output1.nbytes)
-
-bindings1 = [int(d_input1), int(d_output1)]
 
 output2 = np.empty([1, 5, 8400], dtype=np.float32)
 d_input2 = cuda.mem_alloc(1 * img.nbytes)
@@ -32,7 +26,6 @@ bindings2 = [int(d_input2), int(d_output2)]
 stream = cuda.Stream()
 
 args = make_parser().parse_args()
-tracker = BYTETracker(args, frame_rate=30)
 tracker_cgr = BYTETracker(args, frame_rate=30)
 
 
@@ -150,60 +143,6 @@ def cgr_detect_with_onnx(frame):
         return boxes, scores
     else:
         return [], []
-
-
-def pose_estimate_with_onnx(frame):
-    start_time = time.time()
-    [height, width, _] = frame.shape
-    length = max((height, width))
-    image = np.zeros((length, length, 3), np.uint8)
-    image[0:height, 0:width] = frame
-
-    image = cv2.resize(image, (640, 640))
-    scale = length / 640
-    image = image.astype(np.float32) / 255.0
-    image = image[:, :, ::-1]
-    input_img = np.transpose(image, [2, 0, 1])
-    blob = input_img[np.newaxis, :, :, :]
-    blob = np.ascontiguousarray(blob, dtype=np.float32)
-    # blob = cv2.dnn.blobFromImage(image, scalefactor=1 / 255, size=(640, 640), swapRB=True)
-    # 基于tensorRT实现推理计算
-
-    outputs = predict(stream, bindings1, blob, context1, d_input1, d_output1, output1)
-    outputs = np.transpose(outputs, [0, 2, 1])
-
-    classes_scores = outputs[:, :, 4]
-    key_points = outputs[:, :, 5:]
-
-    # Create a mask to filter rows based on classes_scores >= 0.5
-    mask = classes_scores >= 0.5
-
-    # Use the mask to get the filtered_outputs array
-    filtered_outputs = outputs[mask]
-
-    # Calculate boxes using vectorized operations
-    boxes = filtered_outputs[:, 0:4] - np.column_stack(
-        [(0.5 * filtered_outputs[:, 2]), (0.5 * filtered_outputs[:, 3]), np.zeros_like(filtered_outputs[:, 2]),
-         np.zeros_like(filtered_outputs[:, 3])])
-
-    # Extract scores and key points
-    scores = filtered_outputs[:, 4]
-    preds_kpts = key_points[mask]
-
-    # Optionally, convert the boxes list to a NumPy array
-
-    result_boxes = cv2.dnn.NMSBoxes(boxes, scores, 0.25, 0.5, 0.5)
-
-    box = np.array(boxes)[result_boxes].reshape(-1, 4)
-    box = xywh2xyxy_rescale(box, scale, True)
-    scores = np.array(scores)[result_boxes]
-    clss = numpy.zeros(box.shape[0])
-    box, result = bytetrack(box, scores, clss, tracker)
-    if isinstance(box, numpy.ndarray) and box.shape[0] != 0:
-        box = xywh2xyxy_rescale(box, scale, False)
-    kpts = np.array(preds_kpts)[result_boxes].reshape(-1, 17, 3) * scale
-
-    return box, scores, result, kpts
 
 
 def cgr_update(box, score):

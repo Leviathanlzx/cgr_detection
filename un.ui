@@ -170,7 +170,7 @@
           </item>
           <item>
            <property name="text">
-            <string>CPU</string>
+            <string>Openvino</string>
            </property>
           </item>
          </widget>

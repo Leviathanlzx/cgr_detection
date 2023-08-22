@@ -2,7 +2,8 @@ from datetime import datetime
 import cv2
 import numpy as np
 from ov_inference import cgr_detect_with_onnx
-
+# import trt_inference_detr
+# import trt_inference_yolo
 
 class Colors:
     def __init__(self):
@@ -38,9 +39,14 @@ skeleton = [[16, 14], [14, 12], [17, 15], [15, 13], [12, 13], [6, 12], [7, 13], 
 count = [0]
 # 吸烟置信度
 cgr_conf=[0.4]
+# 使用模型
+model=[0]
 # 人员信息列表，包括每个人的id与吸烟检测累计值，累计超过吸烟设定阈值就会被认为在吸烟
 ids = {}
 
+
+def init_model(models):
+    model[0]=models
 
 def judge_smoke(pose_result, img, label):
     k = pose_result.keypoints
@@ -190,7 +196,12 @@ def cgr_detect(k, img, direction, label):
 
     if person.shape[0] != 0 and person.shape[1] != 0:
         # 对挖出图片进行香烟目标检测
-        boxes, scores = cgr_detect_with_onnx(person)
+        if model[0]==0:
+            boxes, scores = trt_inference_detr.cgr_detect_with_onnx(person)
+        if model[0]==1:
+            boxes, scores = trt_inference_yolo.cgr_detect_with_onnx(person)
+        if model[0]==2:
+            boxes, scores = cgr_detect_with_onnx(person)
         # boxes, scores = cgr_detect_alternative(person)
         for i, c in enumerate(scores):
             # 若存在，则添加至香烟队列（用于画图）
