@@ -38,6 +38,8 @@ YOLOv8-Pose+BYTETRACK+RTDETR吸烟检测+Openvino/Onnxruntime/TensorRT部署
     │      yolov8n-cig.pt                 yolov8的pt模型
     ├─trtmodel                            存放新的trt模型
     ├─datasets                            训练用的香烟数据集
+    │  workflow.png                       程序工作流程图
+    │  funcall.png                        函数调用关系图
 >更换推理框架：请修改func.py与infer_main.py中导入函数pose_estimate_with_onnx与cgr_detect_with_onnx的导入方式，可以选择ort_inference.py/ov_inference.py/trt_inference.py来导入上述函数，从而使用不同推理框架
 > 
 >文件替换：由于ultralytics库原生追踪算法与其自己的推理绑定，因此修改了部分库代码，请用项目内文件byte_tracker.py 替换ultralytics库内trackers/byte_tracker.py来使用bytetrack追踪
