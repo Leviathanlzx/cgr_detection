@@ -29,13 +29,14 @@ YOLOv8-Pose+BYTETRACK+RTDETR吸烟检测+Openvino/Onnxruntime/TensorRT部署
     ├─model                               模型文件夹
     │      rtdetr-best.onnx               rtdetr的的onnx模型
     │      rtdetr-best.pt                 rtdetr的的PT模型，可使用ultralytics库的RTDETR载入
-    │      rtdetr-best.trt                rtdetr的的trt模型
+    │      rtdetr-best.trt                rtdetr的的trt模型(测试用,请重新生成)
     │      yolov8m-pose.onnx              yolov8-pose的onnx模型
-    │      yolov8m-pose.trt               yolov8-pose的trt模型
+    │      yolov8m-pose.trt               yolov8-pose的trt模型(测试用,请重新生成)
     │      yolov8n-cig.onnx               yolov8的onnx模型
     │      yolov8n-pose.onnx              yolov8-pose的onnx模型
-    ├─trtmodel                            存放trt模型
-
+    │      yolov8n-cig.pt                 yolov8的pt模型
+    ├─trtmodel                            存放新的trt模型
+    ├─datasets                            训练用的香烟数据集
 >更换推理框架：请修改func.py与infer_main.py中导入函数pose_estimate_with_onnx与cgr_detect_with_onnx的导入方式，可以选择ort_inference.py/ov_inference.py/trt_inference.py来导入上述函数，从而使用不同推理框架
 > 
 >文件替换：由于ultralytics库原生追踪算法与其自己的推理绑定，因此修改了部分库代码，请用项目内文件byte_tracker.py 替换ultralytics库内trackers/byte_tracker.py来使用bytetrack追踪
@@ -52,17 +53,20 @@ YOLOv8-Pose+BYTETRACK+RTDETR吸烟检测+Openvino/Onnxruntime/TensorRT部署
     
 本程序默认为使用trt推理，因为rtdetr对于trt优化有着较大依赖（cpu推理约2000ms，gpu-ort推理约100ms，而gpu-trt推理可以加速到7ms，gpu为3090）
 打开GUI后，首先选择使用模型进行初始化，之后即可正常操作
+
 GUI可调整香烟框、骨架、香烟置信度、检测阈值等（不建议修改这个），并支持保存（应在开始推理前勾选）
 点击“开始/继续”开始推理，界面实时显示推理效果
 
+测试视频位于video文件夹内
+
 ### 注意事项
-在新设备使用时，应先使用trt_infer.ipynb按步骤生成本机对应的trt模型；
-<br>本程序已在3090服务器上使用tensorRT完成部署测试，但由于该服务器的pycharm不兼容某些32位的cuda dll，因此无法从pycharm启动
+在新设备使用时，应先使用trt_infer.ipynb按步骤生成每个onnx模型在本机对应的trt模型；
+<br>本程序已在3090服务器上使用tensorRT完成部署测试，但由于该服务器的pycharm不兼容某些32位的cuda dll，因此无法从pycharm启动（原因未知）
 <br>正确启动方式为：打开conda prompt，输入：
 
     cd C:\Users\Administrator\Desktop\cgr\cgr_detection
 
-然后启动conda环境cgr，输入：
+然后启动conda虚拟环境cgr，输入：
 
     conda activate cgr
 
