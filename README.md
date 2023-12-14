@@ -1,4 +1,4 @@
-# 吸烟检测
+# 吸烟检测 Cigarette Detection
 YOLOv8-Pose+BYTETRACK+RTDETR吸烟检测+Openvino/Onnxruntime/TensorRT部署
 ## 具体流程
 
