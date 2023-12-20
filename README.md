@@ -3,13 +3,13 @@ YOLOv8-Pose+BYTETRACK+RTDETR Cigarette Detection+Openvino/Onnxruntime/TensorRT�
 ## 具体流程 Process
 
 >YOLOv8-pose首先检测图片中人体位置并抽取骨架信息，根据人体骨架姿态判断每个人的手肘弯曲程度以及手与嘴部距离；若判定成功，使用RTDETR对人嘴部位置进行香烟目标检测；若检出目标，则增加对该人的吸烟累计值，当累计值超过一定阈值后，判断为正在吸烟（连续时间判断，减少单帧判断造成的结果不稳定与不准确）。同时，如一段时间检测不到香烟，则累计值缓慢下降至阈值下（停止判断为吸烟状态）
-> <br>为了对目标进行累计值计算，使用bytetrack算法追踪每个人体目标，保证每个人的ID不变
->
->The YOLOv8-pose project begins by detecting human body positions and extracting skeletal information from images. Based on the skeletal poses, it assesses the elbow angles and the distance between hands and mouths for each individual. If successful, the RTDETR model is employed to detect cigarettes at the mouth position.
+<br>为了对目标进行累计值计算，使用bytetrack算法追踪每个人体目标，保证每个人的ID不变
+
+The YOLOv8-pose project begins by detecting human body positions and extracting skeletal information from images. Based on the skeletal poses, it assesses the elbow angles and the distance between hands and mouths for each individual. If successful, the RTDETR model is employed to detect cigarettes at the mouth position.
 
 Upon target detection, the cumulative smoking count for that individual increases. Smoking is determined when the cumulative count surpasses a predefined threshold, ensuring continuous judgment over time to minimize unstable and inaccurate single-frame assessments. In the absence of cigarette detection for a period, the cumulative count gradually decreases until reaching a lower threshold, indicating the cessation of smoking judgment.
 
-To facilitate cumulative calculations, the bytetrack algorithm is used to track each individual, ensuring consistent identification by preserving unique IDs for each person. This project aims to provide a reliable system for real-time monitoring of smoking behavior through skeletal and object detection.
+To facilitate cumulative calculations, the bytetrack algorithm is used to track each individual, ensuring consistent identification by preserving unique IDs for each person. This project aims >to provide a reliable system for real-time monitoring of smoking behavior through skeletal and object detection.
 
 ## 代码说明
 ### 模型使用
